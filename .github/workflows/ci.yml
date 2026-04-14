@@ -38,3 +38,6 @@ jobs:
 
       - name: Tests
         run: composer test -- --coverage-text
+
+      - name: Security audit
+        run: composer audit
