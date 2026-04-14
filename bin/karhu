@@ -1,0 +1,44 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * karhu CLI entry point.
+ *
+ * Scans command classes and dispatches based on $argv.
+ * Usage: bin/karhu <command> [options]
+ */
+
+// Find autoloader — works from both the framework repo and installed packages
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',          // framework repo
+    __DIR__ . '/../../../autoload.php',            // installed as dependency
+];
+
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        require $path;
+        break;
+    }
+}
+
+use Karhu\Cli\CommandDispatcher;
+
+$dispatcher = new CommandDispatcher();
+
+// Scan built-in commands
+$dispatcher->scanCommands([
+    \Karhu\Cli\Commands\RouteCacheCommand::class,
+]);
+
+// If the host app defines a commands config, load it
+$commandsConfig = getcwd() . '/config/commands.php';
+if (file_exists($commandsConfig)) {
+    $classes = require $commandsConfig;
+    if (is_array($classes)) {
+        $dispatcher->scanCommands($classes);
+    }
+}
+
+exit($dispatcher->dispatch($argv));
