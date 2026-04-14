@@ -52,7 +52,7 @@ final class MiddlewarePipeline
         // Wrap from last to first so the first middleware runs first
         foreach (array_reverse($this->middleware) as $mw) {
             $next = $stack;
-            $stack = static fn (Request $request): Response => $mw($request, $next);
+            $stack = static fn(Request $request): Response => $mw($request, $next);
         }
 
         return $stack;

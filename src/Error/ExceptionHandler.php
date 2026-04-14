@@ -162,7 +162,7 @@ final class ExceptionHandler
     private function traceAsStrings(\Throwable $e): array
     {
         return array_map(
-            static fn (array $frame): string => sprintf(
+            static fn(array $frame): string => sprintf(
                 '%s:%s %s%s%s()',
                 $frame['file'] ?? '<internal>',
                 $frame['line'] ?? '?',

@@ -17,7 +17,7 @@ final class CsrfTest extends TestCase
     {
         $mw = new Csrf();
         $req = new Request(server: ['REQUEST_METHOD' => 'GET']);
-        $res = $mw($req, fn () => (new Response())->withBody('ok'));
+        $res = $mw($req, fn() => (new Response())->withBody('ok'));
         $this->assertSame(200, $res->status());
     }
 
@@ -26,7 +26,7 @@ final class CsrfTest extends TestCase
     {
         $mw = new Csrf();
         $req = new Request(server: ['REQUEST_METHOD' => 'HEAD']);
-        $res = $mw($req, fn () => new Response());
+        $res = $mw($req, fn() => new Response());
         $this->assertSame(200, $res->status());
     }
 
@@ -35,7 +35,7 @@ final class CsrfTest extends TestCase
     {
         $mw = new Csrf();
         $req = new Request(server: ['REQUEST_METHOD' => 'OPTIONS']);
-        $res = $mw($req, fn () => new Response());
+        $res = $mw($req, fn() => new Response());
         $this->assertSame(200, $res->status());
     }
 
@@ -45,7 +45,7 @@ final class CsrfTest extends TestCase
         $_SESSION = [];
         $mw = new Csrf();
         $req = new Request(server: ['REQUEST_METHOD' => 'POST']);
-        $res = $mw($req, fn () => new Response());
+        $res = $mw($req, fn() => new Response());
         $this->assertSame(403, $res->status());
     }
 
@@ -73,7 +73,7 @@ final class CsrfTest extends TestCase
             'REQUEST_METHOD' => 'POST',
             'HTTP_ACCEPT' => 'application/json',
         ]);
-        $res = $mw($req, fn () => new Response());
+        $res = $mw($req, fn() => new Response());
         $this->assertSame(403, $res->status());
         $body = json_decode($res->body(), true);
         $this->assertSame('CSRF token mismatch', $body['title']);

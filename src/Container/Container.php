@@ -128,7 +128,7 @@ final class Container implements ContainerInterface
             }
 
             $params = array_map(
-                fn (ReflectionParameter $param) => $this->resolveParameter($param, $class),
+                fn(ReflectionParameter $param) => $this->resolveParameter($param, $class),
                 $constructor->getParameters(),
             );
 

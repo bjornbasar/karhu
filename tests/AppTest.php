@@ -144,7 +144,7 @@ final class AppTest extends TestCase
     public function pipe_is_fluent(): void
     {
         $app = new App();
-        $result = $app->pipe(fn (Request $r, callable $n) => $n($r));
+        $result = $app->pipe(fn(Request $r, callable $n) => $n($r));
         $this->assertSame($app, $result);
     }
 }

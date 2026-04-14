@@ -16,7 +16,7 @@ final class MiddlewarePipelineTest extends TestCase
     public function empty_pipeline_calls_handler_directly(): void
     {
         $pipe = new MiddlewarePipeline();
-        $res = $pipe->handle(new Request(), fn () => (new Response())->withBody('handler'));
+        $res = $pipe->handle(new Request(), fn() => (new Response())->withBody('handler'));
         $this->assertSame('handler', $res->body());
     }
 
@@ -30,7 +30,7 @@ final class MiddlewarePipelineTest extends TestCase
             return $res->withHeader('X-Middleware', 'applied');
         });
 
-        $res = $pipe->handle(new Request(), fn () => (new Response())->withBody('ok'));
+        $res = $pipe->handle(new Request(), fn() => (new Response())->withBody('ok'));
         $this->assertSame('ok', $res->body());
         $this->assertSame('applied', $res->header('x-middleware'));
     }
@@ -69,11 +69,11 @@ final class MiddlewarePipelineTest extends TestCase
     {
         $pipe = new MiddlewarePipeline();
 
-        $pipe->pipe(fn (Request $req, callable $next): Response => (new Response(403))->withBody('blocked'));
+        $pipe->pipe(fn(Request $req, callable $next): Response => (new Response(403))->withBody('blocked'));
 
-        $pipe->pipe(fn (Request $req, callable $next): Response => (new Response())->withBody('should not reach'));
+        $pipe->pipe(fn(Request $req, callable $next): Response => (new Response())->withBody('should not reach'));
 
-        $res = $pipe->handle(new Request(), fn () => (new Response())->withBody('should not reach either'));
+        $res = $pipe->handle(new Request(), fn() => (new Response())->withBody('should not reach either'));
         $this->assertSame(403, $res->status());
         $this->assertSame('blocked', $res->body());
     }
@@ -101,7 +101,7 @@ final class MiddlewarePipelineTest extends TestCase
     public function pipe_is_fluent(): void
     {
         $pipe = new MiddlewarePipeline();
-        $result = $pipe->pipe(fn (Request $r, callable $n) => $n($r));
+        $result = $pipe->pipe(fn(Request $r, callable $n) => $n($r));
         $this->assertSame($pipe, $result);
     }
 }

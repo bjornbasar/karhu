@@ -8,8 +8,8 @@ use Karhu\Container\Container;
 use Karhu\Http\MiddlewarePipeline;
 use Karhu\Http\Request;
 use Karhu\Http\Response;
-use Karhu\Http\RouteResult;
 use Karhu\Http\Router;
+use Karhu\Http\RouteResult;
 
 /**
  * Karhu application — front controller.
@@ -71,7 +71,7 @@ final class App
      */
     public function handle(Request $request): Response
     {
-        return $this->pipeline->handle($request, fn (Request $req) => $this->dispatch($req));
+        return $this->pipeline->handle($request, fn(Request $req) => $this->dispatch($req));
     }
 
     /**

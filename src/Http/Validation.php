@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Karhu\Http;
 
+use Karhu\Attributes\Email;
+use Karhu\Attributes\In;
+use Karhu\Attributes\NumericRange;
+use Karhu\Attributes\Regex;
 use Karhu\Attributes\Required;
 use Karhu\Attributes\StringLength;
-use Karhu\Attributes\NumericRange;
-use Karhu\Attributes\Email;
-use Karhu\Attributes\Regex;
-use Karhu\Attributes\In;
 use ReflectionClass;
 use ReflectionProperty;
 

@@ -38,7 +38,7 @@ final class RequireRole
     public static function for(Rbac $rbac, array $roles): callable
     {
         $mw = new self($rbac, $roles);
-        return fn (Request $request, callable $next): Response => $mw($request, $next);
+        return fn(Request $request, callable $next): Response => $mw($request, $next);
     }
 
     public function __invoke(Request $request, callable $next): Response

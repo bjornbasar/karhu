@@ -17,7 +17,7 @@ final class CorsTest extends TestCase
     {
         $cors = new Cors();
         $req = new Request(server: ['REQUEST_METHOD' => 'GET']);
-        $res = $cors($req, fn () => (new Response())->withBody('ok'));
+        $res = $cors($req, fn() => (new Response())->withBody('ok'));
         $this->assertSame('ok', $res->body());
         $this->assertSame('', $res->header('access-control-allow-origin'));
     }
@@ -30,7 +30,7 @@ final class CorsTest extends TestCase
             'REQUEST_METHOD' => 'GET',
             'HTTP_ORIGIN' => 'https://example.com',
         ]);
-        $res = $cors($req, fn () => new Response());
+        $res = $cors($req, fn() => new Response());
         $this->assertSame('https://example.com', $res->header('access-control-allow-origin'));
         $this->assertSame('Origin', $res->header('vary'));
     }
@@ -43,7 +43,7 @@ final class CorsTest extends TestCase
             'REQUEST_METHOD' => 'GET',
             'HTTP_ORIGIN' => 'https://evil.com',
         ]);
-        $res = $cors($req, fn () => new Response());
+        $res = $cors($req, fn() => new Response());
         $this->assertSame('', $res->header('access-control-allow-origin'));
     }
 
@@ -55,7 +55,7 @@ final class CorsTest extends TestCase
             'REQUEST_METHOD' => 'OPTIONS',
             'HTTP_ORIGIN' => 'https://any.com',
         ]);
-        $res = $cors($req, fn () => new Response(500));
+        $res = $cors($req, fn() => new Response(500));
         $this->assertSame(204, $res->status());
         $this->assertSame('https://any.com', $res->header('access-control-allow-origin'));
         $this->assertNotEmpty($res->header('access-control-allow-methods'));
@@ -70,7 +70,7 @@ final class CorsTest extends TestCase
             'REQUEST_METHOD' => 'GET',
             'HTTP_ORIGIN' => 'https://app.com',
         ]);
-        $res = $cors($req, fn () => new Response());
+        $res = $cors($req, fn() => new Response());
         $this->assertSame('true', $res->header('access-control-allow-credentials'));
     }
 
@@ -82,7 +82,7 @@ final class CorsTest extends TestCase
             'REQUEST_METHOD' => 'GET',
             'HTTP_ORIGIN' => 'https://anything.com',
         ]);
-        $res = $cors($req, fn () => new Response());
+        $res = $cors($req, fn() => new Response());
         $this->assertSame('https://anything.com', $res->header('access-control-allow-origin'));
     }
 }
