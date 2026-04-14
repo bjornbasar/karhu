@@ -9,7 +9,7 @@ on:
 
 jobs:
   check:
-    runs-on: [self-hosted, homelab]
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
