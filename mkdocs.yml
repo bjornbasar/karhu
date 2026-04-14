@@ -1,0 +1,54 @@
+site_name: karhu
+site_description: Minimal PHP microframework — attribute-routed, zero dependencies, PHP 8.3+
+site_url: https://bjornbasar.github.io/karhu/
+repo_url: https://github.com/bjornbasar/karhu
+repo_name: bjornbasar/karhu
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep orange
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep orange
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Routing: routing.md
+  - Middleware: middleware.md
+  - Container: container.md
+  - CLI: cli.md
+  - Auth: auth.md
+  - Validation: validation.md
+  - Error Handling: errors.md
+  - Configuration: config.md
+  - Recipes:
+    - IsTrBuddy Example: recipes/istrbuddy.md
+  - Migrating:
+    - From chukwu/Peopsquik: migrating/index.md
+  - ADR:
+    - Index: adr/index.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
