@@ -43,8 +43,12 @@ final class Csrf
             return self::deny($request);
         }
 
-        // Regenerate token after successful verification
-        self::regenerate();
+        // Token is session-lifetime — does NOT rotate after every successful POST.
+        // Rotating per-POST breaks multi-tab workflows: tab 1 submits and gets a
+        // fresh token; tab 2's existing token is now stale and its next POST 403s.
+        // The token does rotate when the session itself rotates (login, logout) via
+        // Session::regenerate() invalidating $_SESSION[self::SESSION_KEY], OR when
+        // the app explicitly calls Csrf::regenerate() (e.g., for sensitive actions).
 
         return $next($request);
     }
