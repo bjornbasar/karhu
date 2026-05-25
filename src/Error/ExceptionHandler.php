@@ -32,6 +32,13 @@ final class ExceptionHandler
     {
         $this->log($e);
 
+        // ForbiddenException with a redirectTo URL short-circuits to a 302 —
+        // used by stale-session recovery (e.g., a kicked household member
+        // is bounced to /household/setup rather than shown a 403).
+        if ($e instanceof ForbiddenException && $e->redirectTo !== null) {
+            return (new Response())->redirect($e->redirectTo, 302);
+        }
+
         $status = $this->statusCode($e);
         $wantsJson = $request !== null && $request->accepts('application/json')
             && !$request->accepts('text/html');
@@ -136,6 +143,9 @@ final class ExceptionHandler
     /** Map exception types to HTTP status codes. */
     private function statusCode(\Throwable $e): int
     {
+        if ($e instanceof ForbiddenException) {
+            return 403;
+        }
         if ($e instanceof \InvalidArgumentException) {
             return 400;
         }

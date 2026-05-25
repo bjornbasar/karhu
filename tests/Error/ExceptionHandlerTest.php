@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Karhu\Tests\Error;
 
 use Karhu\Error\ExceptionHandler;
+use Karhu\Error\ForbiddenException;
 use Karhu\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -99,5 +100,63 @@ final class ExceptionHandlerTest extends TestCase
 
         $this->assertSame(500, $res->status());
         $this->assertStringContainsString('text/html', $res->header('content-type'));
+    }
+
+    #[Test]
+    public function forbidden_without_redirect_returns_403(): void
+    {
+        $handler = new ExceptionHandler(devMode: false);
+        $request = new Request(server: ['HTTP_ACCEPT' => 'text/html']);
+
+        $res = $handler->handle(new ForbiddenException('nope'), $request);
+
+        $this->assertSame(403, $res->status());
+        $this->assertStringContainsString('Forbidden', $res->body());
+    }
+
+    #[Test]
+    public function forbidden_json_response_uses_403_status(): void
+    {
+        $handler = new ExceptionHandler(devMode: false);
+        $request = new Request(server: ['HTTP_ACCEPT' => 'application/json']);
+
+        $res = $handler->handle(new ForbiddenException('nope'), $request);
+
+        $this->assertSame(403, $res->status());
+        $body = json_decode($res->body(), true);
+        $this->assertSame('Forbidden', $body['title']);
+        $this->assertSame(403, $body['status']);
+    }
+
+    #[Test]
+    public function forbidden_with_redirect_returns_302_to_target(): void
+    {
+        $handler = new ExceptionHandler(devMode: false);
+        $request = new Request(server: ['HTTP_ACCEPT' => 'text/html']);
+
+        $res = $handler->handle(
+            new ForbiddenException('stale session', redirectTo: '/household/setup'),
+            $request,
+        );
+
+        $this->assertSame(302, $res->status());
+        $this->assertSame('/household/setup', $res->header('location'));
+    }
+
+    #[Test]
+    public function forbidden_with_redirect_ignores_accept_header(): void
+    {
+        // Even when the client wants JSON, a redirectTo wins — the goal is
+        // recovery, not error response.
+        $handler = new ExceptionHandler(devMode: false);
+        $request = new Request(server: ['HTTP_ACCEPT' => 'application/json']);
+
+        $res = $handler->handle(
+            new ForbiddenException('stale', redirectTo: '/login'),
+            $request,
+        );
+
+        $this->assertSame(302, $res->status());
+        $this->assertSame('/login', $res->header('location'));
     }
 }
