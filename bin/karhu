@@ -24,8 +24,30 @@ foreach ($autoloadPaths as $path) {
 }
 
 use Karhu\Cli\CommandDispatcher;
+use Karhu\Container\Container;
 
-$dispatcher = new CommandDispatcher();
+$cwd = getcwd() ?: '.';
+
+// If the host app defines a container config, load it BEFORE constructing the
+// dispatcher so commands with typed ctor deps (interfaces, scalars-via-factory)
+// can be resolved. The file may return:
+//   - a Container instance              (fully built by the host)
+//   - a callable(Container): void       (mutates a fresh container)
+// If absent, the dispatcher uses an empty Container — same as before this
+// file was added, so existing apps don't change behaviour.
+$container = null;
+$containerConfig = $cwd . '/config/container.php';
+if (file_exists($containerConfig)) {
+    $configured = require $containerConfig;
+    if ($configured instanceof Container) {
+        $container = $configured;
+    } elseif (is_callable($configured)) {
+        $container = new Container();
+        $configured($container);
+    }
+}
+
+$dispatcher = new CommandDispatcher($container);
 
 // Scan built-in commands
 $dispatcher->scanCommands([
@@ -33,7 +55,7 @@ $dispatcher->scanCommands([
 ]);
 
 // If the host app defines a commands config, load it
-$commandsConfig = getcwd() . '/config/commands.php';
+$commandsConfig = $cwd . '/config/commands.php';
 if (file_exists($commandsConfig)) {
     $classes = require $commandsConfig;
     if (is_array($classes)) {

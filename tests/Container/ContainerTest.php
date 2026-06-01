@@ -35,6 +35,26 @@ final class StubWithDep
     public function __construct(public readonly StubNoDeps $dep) {}
 }
 
+final class StubWithOptionalUnbound
+{
+    // Default = null. If StubServiceInterface isn't bound, the resolver
+    // should fall back to the default instead of throwing.
+    public function __construct(public readonly ?StubServiceInterface $dep = null) {}
+}
+
+final class StubWithNullableUnbound
+{
+    // Nullable, no default. If the interface isn't bound, return null.
+    public function __construct(public readonly ?StubServiceInterface $dep) {}
+}
+
+final class StubWithRequiredUnbound
+{
+    // Required, not nullable. Unbound interface → still throws (existing
+    // behaviour preserved).
+    public function __construct(public readonly StubServiceInterface $dep) {}
+}
+
 final class StubWithInterface
 {
     public function __construct(public readonly StubServiceInterface $service) {}
@@ -182,5 +202,48 @@ final class ContainerTest extends TestCase
         $a = $c->get(StubNoDeps::class);
         $b = $c->get(StubNoDeps::class);
         $this->assertSame($a, $b);
+    }
+
+    // --- Default-value fallback when a typed dep can't be resolved ---
+    // A long-running CLI command might want `?LoggerInterface $log = null` in
+    // its ctor so it works whether the container has a logger or not. The
+    // resolver previously threw on the unbound interface; now it falls back
+    // to the default value (or null) before giving up.
+
+    #[Test]
+    public function unresolvable_typed_param_falls_back_to_default_value(): void
+    {
+        $c = new Container();
+        $instance = $c->get(StubWithOptionalUnbound::class);
+        $this->assertNull($instance->dep);
+    }
+
+    #[Test]
+    public function unresolvable_typed_param_falls_back_to_nullable_null(): void
+    {
+        $c = new Container();
+        $instance = $c->get(StubWithNullableUnbound::class);
+        $this->assertNull($instance->dep);
+    }
+
+    #[Test]
+    public function unresolvable_required_typed_param_still_throws(): void
+    {
+        // No default, not nullable, no binding for the interface → throw.
+        $c = new Container();
+        $this->expectException(NotFoundException::class);
+        $c->get(StubWithRequiredUnbound::class);
+    }
+
+    #[Test]
+    public function default_fallback_still_uses_binding_when_present(): void
+    {
+        // If a binding IS available, the resolver uses it — default is only
+        // a fallback, not a preference.
+        $c = new Container();
+        $c->bind(StubServiceInterface::class, StubService::class);
+        $instance = $c->get(StubWithOptionalUnbound::class);
+        $this->assertNotNull($instance->dep);
+        $this->assertSame('stub', $instance->dep->value());
     }
 }

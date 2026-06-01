@@ -138,15 +138,44 @@ final class Container implements ContainerInterface
         }
     }
 
-    /** Resolve a single constructor parameter. */
+    /**
+     * Resolve a single constructor parameter.
+     *
+     * Resolution order for typed (class/interface) parameters:
+     *   1. Try to `get()` the type — succeeds if bound, factory'd, or a
+     *      concrete class auto-wires.
+     *   2. If `get()` throws `NotFoundException` (unresolvable interface,
+     *      missing concrete dep, etc.), fall back to the parameter's
+     *      default value if one exists.
+     *   3. If still unresolved AND the parameter is nullable, return null.
+     *   4. Otherwise re-throw the original `NotFoundException`.
+     *
+     * Rationale: a `public function __construct(?QueueInterface $q = null)`
+     * shouldn't blow up when nobody registered QueueInterface — the writer
+     * declared a sensible default. PSR-11 doesn't mandate this behaviour but
+     * it matches what league/container + PHP-DI do, and it's the difference
+     * between "every CLI command duplicates DI bootstrap" and "commands stay
+     * clean".
+     */
     private function resolveParameter(ReflectionParameter $param, string $forClass): mixed
     {
         $type = $param->getType();
 
-        // Typed parameter pointing to a class/interface — recurse
+        // Typed parameter pointing to a class/interface — recurse, with
+        // default-value fallback if the recursion can't find a binding.
         if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
             $typeName = $type->getName();
-            return $this->get($typeName);
+            try {
+                return $this->get($typeName);
+            } catch (NotFoundException $e) {
+                if ($param->isDefaultValueAvailable()) {
+                    return $param->getDefaultValue();
+                }
+                if ($type->allowsNull()) {
+                    return null;
+                }
+                throw $e;
+            }
         }
 
         // Has a default value
