@@ -121,6 +121,48 @@ final class ContainerTest extends TestCase
     }
 
     #[Test]
+    public function factory_receives_container_as_first_arg(): void
+    {
+        // New behaviour: the container is passed to factory callbacks so
+        // they can `$c->get(Other::class)` without `use ($container)` capture.
+        $c = new Container();
+        $passed = null;
+        $c->factory('inspect', function (Container $injected) use (&$passed): StubNoDeps {
+            $passed = $injected;
+            return new StubNoDeps();
+        });
+
+        $c->get('inspect');
+        $this->assertSame($c, $passed);
+    }
+
+    #[Test]
+    public function factory_can_resolve_other_bindings_via_injected_container(): void
+    {
+        // The motivating use case: a factory chain where StubWithDep needs
+        // StubNoDeps, expressed without closure capture.
+        $c = new Container();
+        $c->factory(StubNoDeps::class, fn(Container $_c) => new StubNoDeps());
+        $c->factory(StubWithDep::class, fn(Container $c2) => new StubWithDep($c2->get(StubNoDeps::class)));
+
+        $instance = $c->get(StubWithDep::class);
+        $this->assertInstanceOf(StubWithDep::class, $instance);
+        $this->assertSame('yes', $instance->dep->created);
+    }
+
+    #[Test]
+    public function zero_arg_factories_remain_backwards_compatible(): void
+    {
+        // Pre-v0.1.3 callers used `function () use ($container) {...}` —
+        // PHP silently discards the extra positional arg when the closure
+        // doesn't declare it, so old factories still work after the bump.
+        $c = new Container();
+        $c->factory('legacy', fn() => 'old-style');
+
+        $this->assertSame('old-style', $c->get('legacy'));
+    }
+
+    #[Test]
     public function auto_wire_no_deps(): void
     {
         $c = new Container();

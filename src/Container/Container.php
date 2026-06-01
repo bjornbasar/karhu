@@ -23,7 +23,7 @@ final class Container implements ContainerInterface
     /** @var array<string, mixed> Shared singleton instances */
     private array $instances = [];
 
-    /** @var array<string, callable(): mixed> Factory closures */
+    /** @var array<string, callable(Container): mixed> Factory closures */
     private array $factories = [];
 
     /** @var array<string, class-string> Interface → concrete mappings */
@@ -43,7 +43,13 @@ final class Container implements ContainerInterface
     /**
      * Register a factory closure. Called once; result cached as singleton.
      *
-     * @param callable(): mixed $factory
+     * The container is passed as the first argument so factories can resolve
+     * other bindings without capturing `$container` via `use`. Existing
+     * zero-arg factories continue to work — PHP silently discards the extra
+     * positional arg when the callable's signature doesn't declare it — so
+     * this is non-breaking.
+     *
+     * @param callable(Container): mixed $factory
      */
     public function factory(string $id, callable $factory): void
     {
@@ -67,9 +73,12 @@ final class Container implements ContainerInterface
             return $this->instances[$id];
         }
 
-        // Has a factory
+        // Has a factory — pass the container as the first arg so the factory
+        // can resolve other bindings without `use ($container)` capture.
+        // Older factories with zero-arg signatures still work (PHP discards
+        // unused positional args silently).
         if (isset($this->factories[$id])) {
-            $this->instances[$id] = ($this->factories[$id])();
+            $this->instances[$id] = ($this->factories[$id])($this);
             unset($this->factories[$id]);
             return $this->instances[$id];
         }
