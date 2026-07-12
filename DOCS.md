@@ -16,7 +16,7 @@ Minimal PHP microframework — attribute-routed, zero runtime dependencies.
 | Static analysis | PHPStan level 8 |
 | Code style | php-cs-fixer (PER-CS2.0) |
 | Docs | MkDocs Material |
-| CI | GitHub Actions (self-hosted runner) |
+| CI | GitHub Actions (GitHub-hosted, `ubuntu-latest`) |
 
 ---
 
@@ -70,7 +70,7 @@ bin/karhu route:cache    # compile route cache for production
 
 ## CI/CD
 
-GitHub Actions on self-hosted runner (Hurska):
+GitHub Actions on GitHub-hosted runners (`ubuntu-latest`, per the public-repo CI policy):
 - PHP 8.3 + 8.4 matrix
 - php-cs-fixer, PHPStan level 8, PHPUnit, composer audit
 - Docs deploy to GitHub Pages on docs/** changes
