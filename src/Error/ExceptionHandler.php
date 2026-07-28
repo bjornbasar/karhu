@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Karhu\Error;
 
+use Karhu\Http\NotFoundException;
 use Karhu\Http\Request;
 use Karhu\Http\Response;
 
@@ -145,6 +146,15 @@ final class ExceptionHandler
     {
         if ($e instanceof ForbiddenException) {
             return 403;
+        }
+        // v0.1.4 — NotFoundException → 404. Defense-in-depth for NFE that
+        // escapes the request pipeline (CLI commands, queue workers, or a
+        // future middleware that throws BEFORE App::callHandler catches it).
+        // Web dispatch catches NFE in App::callHandler first, so this branch
+        // is rarely exercised in-request. Without this map entry a background
+        // job throwing NotFoundException would render as 500 — misleading.
+        if ($e instanceof NotFoundException) {
+            return 404;
         }
         if ($e instanceof \InvalidArgumentException) {
             return 400;

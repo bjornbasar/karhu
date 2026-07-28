@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Karhu;
 
 use Karhu\Container\Container;
+use Karhu\Http\DefaultErrorHandler;
+use Karhu\Http\ErrorHandler;
 use Karhu\Http\MiddlewarePipeline;
+use Karhu\Http\NotFoundException;
 use Karhu\Http\Request;
 use Karhu\Http\Response;
 use Karhu\Http\Router;
@@ -91,13 +94,22 @@ final class App
         $result = $this->router->match($request->method(), $request->path());
 
         if ($result->isMethodNotAllowed()) {
+            // 405 preserves the classic hard fallback for now — the
+            // ErrorHandler seam is 404-first; 405 stays inline until a
+            // future release wants to unify. Body + Allow header shape
+            // matches pre-v0.1.4 verbatim.
             return (new Response(405))
                 ->withHeader('Allow', implode(', ', $result->allowedMethods))
                 ->withBody('Method Not Allowed');
         }
 
         if (!$result->found) {
-            return (new Response(404))->withBody('Not Found');
+            // v0.1.4 — unmatched-route path resolves the container-bound
+            // ErrorHandler (or DefaultErrorHandler fallback) so consumers
+            // can render a branded 404. See resolveErrorHandler() for the
+            // defensive try/catch that guarantees a 404 even when the
+            // bound handler itself explodes.
+            return $this->handleNotFound($request, null);
         }
 
         // Inject route params into the request
@@ -115,7 +127,20 @@ final class App
         [$class, $method] = explode('::', $result->handler);
 
         $controller = $this->container->get($class);
-        $response = $controller->{$method}($request);
+
+        // v0.1.4 — a matched controller throwing NotFoundException routes
+        // through the SAME handler as the unmatched-route path. Idiomatic
+        // "resource-by-id not found" becomes `throw new NotFoundException()`
+        // in the controller — the response body/branding lives in one
+        // place, not duplicated across every controller. This catch
+        // deliberately runs INSIDE dispatch (not in ExceptionHandler)
+        // because ExceptionHandler is instantiated pre-App at
+        // set_exception_handler() time and has no container access.
+        try {
+            $response = $controller->{$method}($request);
+        } catch (NotFoundException $e) {
+            return $this->handleNotFound($request, $e);
+        }
 
         if ($response instanceof Response) {
             return $response;
@@ -132,5 +157,50 @@ final class App
         }
 
         return new Response();
+    }
+
+    /**
+     * Build a 404 Response via the bound ErrorHandler (or DefaultErrorHandler
+     * fallback). Shared by BOTH the unmatched-route path and the "matched
+     * controller threw NotFoundException" path.
+     *
+     * Defensive try/catch: if a bound handler itself throws (missing Twig
+     * template, DB failure in a nav context lookup, any other Throwable)
+     * we fall back to DefaultErrorHandler so a 404 is ALWAYS served. This
+     * preserves the pre-v0.1.4 guarantee that "unmatched route always
+     * returns 'Not Found'" — the branded upgrade must not regress that.
+     */
+    private function handleNotFound(Request $request, ?\Throwable $error): Response
+    {
+        $handler = $this->resolveErrorHandler();
+        try {
+            return $handler->handle($request, $error, ['status' => 404]);
+        } catch (\Throwable) {
+            // Any bound-handler failure → bland default. Swallow the
+            // internal Throwable so a broken 404 template doesn't cascade
+            // into a 500 for the user; the outer set_exception_handler
+            // will still log the underlying issue if it propagates from
+            // the DefaultErrorHandler (extremely unlikely — it's ~4 LOC).
+            return (new DefaultErrorHandler())->handle($request, $error, ['status' => 404]);
+        }
+    }
+
+    /**
+     * Container-bind aware lookup with default fallback. Returns the bound
+     * ErrorHandler if one exists (typical: an app binds its own branded
+     * implementation in bootstrap); otherwise a shared DefaultErrorHandler.
+     */
+    private function resolveErrorHandler(): ErrorHandler
+    {
+        // has() correctly returns false for interfaces with no explicit
+        // binding — class_exists() returns false for interfaces, so the
+        // Container.php:108 autoload-fallback doesn't trip.
+        if ($this->container->has(ErrorHandler::class)) {
+            $bound = $this->container->get(ErrorHandler::class);
+            if ($bound instanceof ErrorHandler) {
+                return $bound;
+            }
+        }
+        return new DefaultErrorHandler();
     }
 }
