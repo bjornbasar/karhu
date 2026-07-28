@@ -138,6 +138,26 @@ final class Request
         return str_contains($accept, $type) || str_contains($accept, '*/*');
     }
 
+    /**
+     * True iff the client prefers a JSON response over HTML.
+     *
+     * v0.1.4 — the pragmatic short-cut used consistently across karhu.
+     * Mirrors Karhu\Middleware\Csrf::deny at src/Middleware/Csrf.php:121
+     * exactly ("accepts JSON AND does not accept HTML") — a naive
+     * str_contains('application/json') would misroute browsers whose
+     * default Accept includes the "any type" wildcard plus text/html.
+     *
+     * Semantics:
+     * - curl -H 'Accept: application/json'                      → true
+     * - browser default (text/html,application/xml;q=0.9,wildcard) → false
+     * - wildcard-only Accept (curl default)                     → false
+     * - empty Accept                                            → false
+     */
+    public function prefersJson(): bool
+    {
+        return $this->accepts('application/json') && !$this->accepts('text/html');
+    }
+
     /** @return array<string, string> Route parameters set by Router. */
     public function routeParams(): array
     {
