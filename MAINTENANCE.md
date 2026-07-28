@@ -11,7 +11,7 @@ karhu is in early alpha. The API surface may change between minor versions until
 - **Security patches:** applied promptly for any version in active use.
 - **PHP floor bumps:** the PHP version requirement will track supported PHP releases. When the current floor reaches EOL, the next minor karhu release bumps the floor.
 - **Bug fixes:** accepted via PR; must include tests and pass `composer check`.
-- **New features in core:** rare. karhu core is intentionally ~1200 LOC. New capabilities should generally ship as separate `karhu-*` packages.
+- **New features in core:** rare. karhu core is intentionally ~1200 LOC. New capabilities should generally ship as separate `karhu-*` packages. **Exceptions:** v0.1.4's `Http\ErrorHandler` hook + `Http\NotFoundException` + `Request::prefersJson()` were added directly to core because they touch `App::dispatch` — a core dispatch-flow concern. A sub-package would have needed `App` to expose a setter API, adding more surface than the ~60-LOC change itself. When in doubt, prefer the sub-package.
 
 ## Contributing
 

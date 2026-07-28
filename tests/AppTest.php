@@ -75,10 +75,18 @@ final class AppTest extends TestCase
     #[Test]
     public function returns_404_for_unknown_path(): void
     {
+        // v0.1.4 istrbuddy-safety contract: a karhu consumer that never
+        // binds ErrorHandler in its container MUST see zero behavior change
+        // on upgrade. Body 'Not Found' + Cache-Control no-store are the
+        // canonical DefaultErrorHandler output. Locking these in AppTest
+        // (not just ErrorHandlerTest) means a future refactor that swapped
+        // the default MUST update the primary framework smoke test too.
         $app = $this->createApp();
         $res = $app->handle(new Request(server: ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/unknown']));
 
         $this->assertSame(404, $res->status());
+        $this->assertSame('Not Found', $res->body());
+        $this->assertSame('no-store', $res->header('cache-control'));
     }
 
     #[Test]
