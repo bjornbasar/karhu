@@ -8,7 +8,7 @@
 
 ## 0. Orientation — the shape in one breath
 
-karhu is **~2,800 LOC, zero runtime dependencies, attribute-routed**. Coming from your background, calibrate like this:
+karhu is **~3,000 LOC, zero runtime dependencies, attribute-routed**. Coming from your background, calibrate like this:
 
 - **Not** Slim/Lumen/Flight: there is **no closure routing, no `routes.php`, no YAML**. Routes are PHP 8 attributes on controller methods, full stop ([ADR-0007](docs/adr/0007-opinionated-attribute-only-routing.md)).
 - **Not** Symfony/Laravel: the container auto-wires by reflection but there is no service-provider ceremony, no config compilation, no facades-everywhere.
@@ -72,7 +72,7 @@ App::callHandler()            src/App.php:113
 Response::emit()              src/Http/Response.php:88   http_response_code + headers + echo
 ```
 
-**Read it top to bottom in the code once.** `App` is only 136 lines and is the map of the whole framework: [src/App.php](src/App.php).
+**Read it top to bottom in the code once.** `App` is only 206 lines and is the map of the whole framework: [src/App.php](src/App.php).
 
 ---
 
@@ -180,7 +180,20 @@ Trade-off they accepted: full-PSR-7 middleware/libraries won't drop in without a
 
 ---
 
-## 8. Error handling — content-negotiated, RFC 7807
+## 8. Error handling — two seams at two altitudes
+
+karhu has **two** error paths, and conflating them is the easy mistake. They hook at different places and answer different questions:
+
+| | `Karhu\Error\ExceptionHandler` | `Karhu\Http\ErrorHandler` (v0.1.4) |
+|---|---|---|
+| Hooks at | the **SAPI boundary**, via `set_exception_handler()` | inside `App::dispatch`, on the response path |
+| Catches | *any* uncaught throwable — the last-resort net | a **known** HTTP error condition (today: 404) |
+| Supplied by | the framework, wired in `index.php` | **the app**, bound into the container |
+| Produces | RFC 7807 `problem+json` or an HTML trace page | whatever the app renders — a branded 404 |
+
+Short version: **ExceptionHandler is for things that went wrong; ErrorHandler is for things that are absent.** A missing page isn't an exceptional condition, so routing it through the 500-shaped net gave you a plaintext `Not Found` and no way to brand it.
+
+### 8a. ExceptionHandler — the last-resort net
 
 [src/Error/ExceptionHandler.php](src/Error/ExceptionHandler.php).
 
@@ -188,6 +201,28 @@ Trade-off they accepted: full-PSR-7 middleware/libraries won't drop in without a
 - `handle()` [:31-49](src/Error/ExceptionHandler.php#L31-L49): logs, then negotiates — JSON clients get **`application/problem+json`** (RFC 7807), browsers get an HTML page (full trace only when `APP_ENV=local`).
 - **`ForbiddenException` with a `redirectTo`** short-circuits to a 302 ([:38-40](src/Error/ExceptionHandler.php#L38-L40)) — the comment explains the real use case (a kicked household member bounced to `/household/setup` instead of a dead-end 403). That's a mishka-driven feature living in the framework; note it for §13.
 - `statusCode()` [:144-153](src/Error/ExceptionHandler.php#L144-L153) maps exception *types* to codes (`InvalidArgumentException` → 400, `ForbiddenException` → 403, else 500). Throwing the right exception type *is* the API for setting status.
+
+### 8b. ErrorHandler — the pluggable 404 seam
+
+Three small files and one wiring method. [src/Http/ErrorHandler.php](src/Http/ErrorHandler.php) is the interface an app implements; [src/Http/DefaultErrorHandler.php](src/Http/DefaultErrorHandler.php) is the bland fallback; [src/Http/NotFoundException.php](src/Http/NotFoundException.php) is what a controller throws.
+
+**Two paths converge on one seam** — that convergence is the whole design:
+
+1. **No route matched** — [App.php:106-112](src/App.php#L106-L112) calls `handleNotFound()`.
+2. **A route matched, but the row didn't exist** — the controller throws `NotFoundException`, caught at [App.php:141](src/App.php#L141), which calls the *same* `handleNotFound()`.
+
+**Why that matters:** before this, "no such URL" and "no such invoice" produced different responses through different code, so branding one left the other bare. Now a controller writes `throw new NotFoundException()` instead of hand-assembling a 404 Response, and both routes render identically.
+
+**The two details worth stealing:**
+
+- **A defensive `try`/`catch` around the app's own handler** ([:173-186](src/App.php#L173-L186)). If a bound handler explodes — missing Twig template, a DB failure inside a nav lookup — karhu swallows it and serves `DefaultErrorHandler` anyway. **Why:** the pre-v0.1.4 guarantee was *"an unmatched route always returns Not Found."* Making 404s brandable must not turn a broken template into a 500. The upgrade is not allowed to regress the floor.
+- **`DefaultErrorHandler`'s bodies are byte-for-byte the old hard-coded strings.** An app that never binds anything — istrbuddy today — sees *zero* behaviour change. That's how you add a seam to a framework with existing consumers.
+
+`resolveErrorHandler()` ([:193-205](src/App.php#L193-L205)) does the lookup, and its comment records a subtle container fact: `has()` correctly returns `false` for an *interface* with no binding, because `class_exists()` is false for interfaces and so the container's autoload fallback never trips. Worth knowing before you write `has()` against an interface anywhere else.
+
+**Content negotiation moved down a layer too:** `Request::prefersJson()` ([Request.php:156-159](src/Http/Request.php#L156-L159)) is `accepts('application/json') && !accepts('text/html')` — deliberately conservative, so a browser (which accepts both) always gets HTML. The app's handler calls it to decide JSON vs page.
+
+See this seam's other half in the **mishka** tour — `MishkaErrorHandler` is the branded implementation, and it has a session-churn gotcha worth reading: [mishka/CODE-TOUR.md](../mishka/CODE-TOUR.md).
 
 ---
 
@@ -265,4 +300,4 @@ The question to carry into mishka: *what does a real app have to supply that the
 
 ---
 
-*Tour covers karhu core @ `e37ce06`. Companion docs: [DOCS.md](DOCS.md) (project facts), [docs/adr/](docs/adr/) (decisions), [docs/](docs/) (usage). Next tours: mishka → istrbuddy → ansible.*
+*Tour covers karhu core @ `460cd5c`. Companion docs: [DOCS.md](DOCS.md) (project facts), [docs/adr/](docs/adr/) (decisions), [docs/](docs/) (usage). Next tours: mishka → istrbuddy → ansible.*
