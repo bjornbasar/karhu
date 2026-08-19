@@ -187,13 +187,9 @@ myapp/
 └── docs/deployment/{apache.conf,nginx.conf}
 ```
 
-!!! note "The skeleton tracks `dev-main`"
-    Its `composer.json` requires `bjornbasar/karhu: dev-main` with `minimum-stability: dev`, so a
-    fresh install gets the tip of `main` rather than the v0.1.5 release. Pin it for anything real:
-
-    ```bash
-    composer require bjornbasar/karhu:^0.1.5
-    ```
+The skeleton pins `bjornbasar/karhu: ^0.1.5`, so `composer install` resolves a release from
+Packagist. It tracked `dev-main` until v0.1.5, which meant a fresh clone got whatever was at the
+tip of the framework's default branch — bump the pin deliberately rather than widening it.
 
 ---
 

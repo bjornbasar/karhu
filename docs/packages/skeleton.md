@@ -19,13 +19,12 @@ composer install
 composer serve      # http://localhost:8080
 ```
 
-!!! note "Pin karhu before building anything real"
-    The skeleton requires `bjornbasar/karhu: dev-main` with `minimum-stability: dev`, so a fresh
-    install tracks the tip of `main` rather than a release.
+The skeleton requires **`bjornbasar/karhu: ^0.1.5`**, so `composer install` resolves a release
+from Packagist rather than a moving branch. It tracked `dev-main` with `minimum-stability: dev`
+until v0.1.5, which meant two people cloning a week apart got different frameworks.
 
-    ```bash
-    composer require bjornbasar/karhu:^0.1.5
-    ```
+That pin is also what makes `vendor/bin/karhu` work below — Composer only creates the shim
+because karhu declares a `bin` key, which landed in v0.1.5.
 
 ## What you get
 
