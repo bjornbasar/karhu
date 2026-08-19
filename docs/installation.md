@@ -30,6 +30,14 @@ composer require bjornbasar/karhu
 
 That is the whole install. The current release is **v0.1.5**.
 
+Or start from the skeleton, which gives you a working application in one command:
+
+```bash
+composer create-project bjornbasar/karhu-skeleton myapp
+cd myapp
+composer serve      # http://localhost:8080
+```
+
 !!! note "`vendor/bin/karhu` requires v0.1.5 or newer"
     The `bin` key that tells Composer to link the CLI into `vendor/bin/` landed in **v0.1.5**.
     If you are pinned to v0.1.4 or earlier the shim is never created, and the entry point has to
@@ -38,13 +46,6 @@ That is the whole install. The current release is **v0.1.5**.
     ```bash
     php vendor/bjornbasar/karhu/bin/karhu list
     ```
-
-!!! warning "`composer create-project bjornbasar/karhu-skeleton` does not work yet"
-    The skeleton exists [on GitHub](https://github.com/bjornbasar/karhu-skeleton) but has **not
-    been submitted to Packagist**, so `create-project` fails with a package-not-found error.
-    Clone it instead — see [Start from the skeleton](#start-from-the-skeleton) below.
-
-    Published today: `karhu`, `karhu-db`, `karhu-queue`, `karhu-view`.
 
 ---
 
@@ -164,13 +165,11 @@ myapp/
 ## Start from the skeleton
 
 The skeleton is the same layout plus a CLI entry point, an example command, and Apache/nginx
-configs. Until it is on Packagist, clone it:
+configs.
 
 ```bash
-git clone https://github.com/bjornbasar/karhu-skeleton.git myapp
+composer create-project bjornbasar/karhu-skeleton myapp
 cd myapp
-rm -rf .git
-composer install
 composer serve      # http://localhost:8080
 ```
 

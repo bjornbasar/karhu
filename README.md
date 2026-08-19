@@ -14,13 +14,11 @@ A small framework you can read end-to-end. ~1200 LOC core, no closures-as-routes
 composer require bjornbasar/karhu
 ```
 
-Or start from the skeleton app. It is **not on Packagist yet**, so clone it rather than using
-`composer create-project`:
+Or start from the skeleton app:
 
 ```bash
-git clone https://github.com/bjornbasar/karhu-skeleton.git myapp
-cd myapp && rm -rf .git
-composer install
+composer create-project bjornbasar/karhu-skeleton myapp
+cd myapp
 composer serve   # http://localhost:8080
 ```
 

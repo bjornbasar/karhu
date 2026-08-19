@@ -43,17 +43,14 @@ ci_php php tools/check-docs.php
 # A definitive 404 is FATAL; a transport failure is a WARNING — a Packagist outage must
 # not turn an unrelated docs commit red in #duskana.
 #
-# KNOWN_UNPUBLISHED: packages the docs mention *in order to say they are not installable*.
-# bjornbasar/karhu-skeleton is on GitHub but was never submitted to Packagist, so
-# installation.md and packages/skeleton.md warn about it and tell people to clone — and
-# they necessarily contain the string `composer create-project bjornbasar/karhu-skeleton`,
-# which this grep would otherwise flag as a broken install line.
-#
-# The exception is deliberately NOT a silent skip. If a listed package turns up on
-# Packagist, the deploy FAILS asking for the exception to be removed — otherwise this list
-# rots into a permanent blind spot the day the skeleton is finally published.
-KNOWN_UNPUBLISHED="bjornbasar/karhu-skeleton"
-
+# There was a KNOWN_UNPUBLISHED exception here for bjornbasar/karhu-skeleton, which was on
+# GitHub but had never been submitted to Packagist — the docs named it in order to say so,
+# and that necessarily put `composer create-project bjornbasar/karhu-skeleton` in the text
+# this grep reads. The exception was written to FAIL rather than skip once the package
+# appeared, and on 2026-08-19 it did exactly that: the skeleton was submitted, the next
+# deploy went red, and the exception plus three "not on Packagist" warnings came out
+# together. Every advertised package is now genuinely installable, so the plain rule
+# applies with no carve-outs. Do not add one back without the same fail-when-fixed shape.
 ci_log "assert every advertised composer package resolves with a stable version"
 # `|| true`: grep exits 1 when it matches nothing, and under `set -euo pipefail` that
 # would abort on the very case the empty branch exists to handle.
@@ -63,22 +60,11 @@ if [ -z "$PKGS" ]; then
   ci_log "no composer commands advertised — nothing to check"
 else
   for PKG in $PKGS; do
-    EXPECT_MISSING=false
-    case " $KNOWN_UNPUBLISHED " in *" $PKG "*) EXPECT_MISSING=true ;; esac
-
     BODY=$(curl -sS --max-time 20 -w '\n%{http_code}' "https://repo.packagist.org/p2/$PKG.json" 2>/dev/null) || {
       ci_log "⚠ could not reach Packagist for $PKG — SKIPPING (transport failure, not a stale line)"
       continue
     }
     CODE=$(printf '%s' "$BODY" | tail -1)
-
-    if [ "$EXPECT_MISSING" = true ]; then
-      case "$CODE" in
-        404) ci_log "absent as expected (correct): $PKG — docs document it as clone-only"; continue ;;
-        200) ci_die "$PKG is NOW ON PACKAGIST — remove it from KNOWN_UNPUBLISHED and update the 'not on Packagist' warnings in docs/installation.md + docs/packages/skeleton.md" ;;
-        *)   ci_log "⚠ Packagist returned $CODE for $PKG — SKIPPING (not definitive)"; continue ;;
-      esac
-    fi
 
     case "$CODE" in
       200) ;;

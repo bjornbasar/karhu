@@ -130,7 +130,7 @@ assertions that the repo itself 404s.
 
 | Repo | Purpose |
 |------|---------|
-| [karhu-skeleton](https://github.com/bjornbasar/karhu-skeleton) | Starter app template. **Not on Packagist** — `composer create-project` fails; clone it |
+| [karhu-skeleton](https://github.com/bjornbasar/karhu-skeleton) | Starter app template — `composer create-project bjornbasar/karhu-skeleton`. Pins karhu `^0.1.5` |
 | [karhu-db](https://github.com/bjornbasar/karhu-db) | PDO wrapper, active-record base, `PdoUserRepository` |
 | [karhu-queue](https://github.com/bjornbasar/karhu-queue) | Queue/worker abstraction, database driver |
 | [karhu-view](https://github.com/bjornbasar/karhu-view) | Twig + Plates adapters |

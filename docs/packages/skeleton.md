@@ -3,28 +3,28 @@
 A starter application: a working front controller, one route, one CLI command, and reference
 deployment configs. Meant to be copied and edited.
 
-[github.com/bjornbasar/karhu-skeleton](https://github.com/bjornbasar/karhu-skeleton) · v0.1.0 · MIT
+[github.com/bjornbasar/karhu-skeleton](https://github.com/bjornbasar/karhu-skeleton) · v0.1.1 · MIT
 
 ## Install
 
-!!! warning "Not on Packagist yet"
-    `composer create-project bjornbasar/karhu-skeleton` **fails** — the package has not been
-    submitted. Clone it instead:
-
 ```bash
-git clone https://github.com/bjornbasar/karhu-skeleton.git myapp
+composer create-project bjornbasar/karhu-skeleton myapp
 cd myapp
-rm -rf .git
-composer install
 composer serve      # http://localhost:8080
 ```
 
-The skeleton requires **`bjornbasar/karhu: ^0.1.5`**, so `composer install` resolves a release
-from Packagist rather than a moving branch. It tracked `dev-main` with `minimum-stability: dev`
-until v0.1.5, which meant two people cloning a week apart got different frameworks.
+The skeleton requires **`bjornbasar/karhu: ^0.1.5`**, so you get a framework release rather than
+a moving branch. It tracked `dev-main` with `minimum-stability: dev` until skeleton v0.1.1, which
+meant two people installing a week apart got different frameworks.
 
 That pin is also what makes `vendor/bin/karhu` work below — Composer only creates the shim
-because karhu declares a `bin` key, which landed in v0.1.5.
+because karhu declares a `bin` key, which landed in karhu v0.1.5.
+
+!!! warning "Use v0.1.1 or newer"
+    Skeleton **v0.1.0** predates this template's documentation entirely: no README, no LICENSE,
+    and the framework pinned to `dev-main`. It was the only tag when the package was first
+    submitted to Packagist. `create-project` resolves the newest stable release, so you get
+    v0.1.1 — but do not pin back to v0.1.0.
 
 ## What you get
 
