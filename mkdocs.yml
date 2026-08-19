@@ -1,8 +1,11 @@
 site_name: karhu
 site_description: Minimal PHP microframework — attribute-routed, zero dependencies, PHP 8.3+
-site_url: https://bjornbasar.github.io/karhu/
+# The canonical home. mkdocs-material emits <link rel="canonical"> from this value, so the
+# GitHub Pages mirror points here too and does not compete with it in search results.
+site_url: https://framework.twobots.dev/
 repo_url: https://github.com/bjornbasar/karhu
 repo_name: bjornbasar/karhu
+copyright: MIT licensed
 
 theme:
   name: material
@@ -21,34 +24,98 @@ theme:
         name: Switch to dark mode
   features:
     - navigation.sections
-    - navigation.expand
+    - navigation.top
+    - navigation.tracking
     - content.code.copy
+    - content.code.annotate
     - search.highlight
+    - search.suggest
+    - toc.follow
 
 nav:
   - Home: index.md
+  - Installation: installation.md
   - Getting Started: getting-started.md
-  - Routing: routing.md
-  - Middleware: middleware.md
-  - Container: container.md
-  - CLI: cli.md
-  - Auth: auth.md
-  - Validation: validation.md
-  - Error Handling: errors.md
-  - Configuration: config.md
-  - Recipes:
-    - IsTrBuddy Example: recipes/istrbuddy.md
-  - Migrating:
-    - From chukwu/Peopsquik: migrating/index.md
-  - ADR:
-    - Index: adr/index.md
+  - Tutorial:
+    - Overview: tutorial/index.md
+    - 1. Routes and responses: tutorial/01-routes.md
+    - 2. Controllers and services: tutorial/02-controllers.md
+    - 3. Validating input: tutorial/03-validation.md
+    - 4. Authentication and roles: tutorial/04-auth.md
+    - 5. Errors, CLI and production: tutorial/05-production.md
+  - Guides:
+    - Routing: routing.md
+    - Requests & Responses: requests.md
+    - Controllers: controllers.md
+    - Middleware: middleware.md
+    - Container: container.md
+    - Configuration: config.md
+    - Validation: validation.md
+    - Auth & RBAC: auth.md
+    - Sessions & Cookies: sessions.md
+    - Error Handling: errors.md
+    - Logging: logging.md
+    - CLI: cli.md
+    - Testing: testing.md
+    - Deployment: deployment.md
+  - API Reference:
+    - Overview: api/index.md
+    - Karhu\App: api/app.md
+    - Karhu\Http: api/http.md
+    - Karhu\Container: api/container.md
+    - Karhu\Attributes: api/attributes.md
+    - Karhu\Middleware: api/middleware.md
+    - Karhu\Auth: api/auth.md
+    - Karhu\Config: api/config.md
+    - Karhu\Cli: api/cli.md
+    - Karhu\Error: api/error.md
+    - Karhu\Log: api/log.md
+  - Packages:
+    - karhu-skeleton: packages/skeleton.md
+    - karhu-db: packages/db.md
+    - karhu-queue: packages/queue.md
+    - karhu-view: packages/view.md
+    - IsTrBuddy (reference app): packages/istrbuddy.md
+  - Project:
+    - Migrating from chukwu/Peopsquik: migrating/index.md
+    - Contributing: contributing.md
+    - ADR:
+      - Index: adr/index.md
+      - 0001 Core principles: adr/0001-principles.md
+      - 0002 Attribute routing with cache: adr/0002-attribute-routing-with-cache.md
+      - 0003 Zero runtime dependencies: adr/0003-zero-runtime-deps.md
+      - 0004 PHP version floor: adr/0004-php-version-floor.md
+      - 0005 PSR-7 shape, not compliance: adr/0005-psr7-shape-not-compliance.md
+      - 0006 RBAC via repository interface: adr/0006-rbac-via-repository-interface.md
+      - 0007 Attribute-only routing: adr/0007-opinionated-attribute-only-routing.md
+
+# Turn link and anchor problems into warnings, which `--strict` then turns into a
+# failed build. Without this, a cross-reference to a heading that was renamed is only
+# an INFO message and ships broken. The docs deploy runs `build --strict`.
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
+  - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - toc:
       permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/bjornbasar/karhu
+    - icon: fontawesome/brands/php
+      link: https://packagist.org/packages/bjornbasar/karhu

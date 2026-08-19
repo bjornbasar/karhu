@@ -83,8 +83,15 @@ $app->setBasePath('/my-app');
 Attribute scanning uses reflection, which has a per-request cost. For production:
 
 ```bash
-bin/karhu route:cache        # writes cache/routes.php
-bin/karhu route:clear        # removes the cache
+vendor/bin/karhu route:cache        # writes cache/routes.php
+vendor/bin/karhu route:clear        # removes the cache
 ```
 
 The router loads the cached file on boot when present, skipping reflection entirely.
+
+## See also
+
+- [API reference — `Router`](api/http.md#router) — every method, plus the full matching rules
+- [`#[Route]`](api/attributes.md#route) — the attribute's signature
+- [Controllers](controllers.md) — organising handlers
+- [Deployment](deployment.md) — why the route cache must be rebuilt on every deploy

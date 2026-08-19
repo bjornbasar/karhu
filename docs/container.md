@@ -42,3 +42,8 @@ $service = $container->get(OrderService::class);
 ## Circular dependency detection
 
 The container detects circular dependencies and throws `ContainerException` with a clear message.
+
+## See also
+
+- [API reference — `Karhu\Container`](api/container.md) — resolution order and the exception types
+- [ADR 0003](adr/0003-zero-runtime-deps.md) — why karhu declares its own PSR-11 shape

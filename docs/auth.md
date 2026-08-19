@@ -68,7 +68,22 @@ Returns 401 (not logged in) or 403 (missing role). Content-negotiated: JSON `app
 $user = $rbac->authenticate($username, $password, $hasher);
 
 if ($user) {
+    Session::regenerate();                      // FIRST — prevents session fixation
     Session::set('username', $user['username']);
-    Session::regenerate(); // prevent session fixation
 }
 ```
+
+`authenticate()` returns `null` for both an unknown user and a wrong password, deliberately — the
+response cannot be used to work out which accounts exist.
+
+!!! warning "Regenerate before writing the identity, not after"
+    `session_regenerate_id(true)` carries the data across either way, so both orders happen to
+    work today. Regenerating **first** is the habit worth keeping: it holds even when the login
+    path later grows an early return, and it makes the security intent obvious to the next reader.
+
+## See also
+
+- [API reference — `Karhu\Auth`](api/auth.md) — every method, with the repository contract
+- [`RequireRole`](api/middleware.md#requirerole) — the middleware
+- [Sessions & Cookies](sessions.md) — cookie flags and why `Secure` needs a proxy header
+- [ADR 0006](adr/0006-rbac-via-repository-interface.md) — why RBAC goes through an interface
