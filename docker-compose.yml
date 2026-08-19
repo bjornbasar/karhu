@@ -1,0 +1,14 @@
+# Deploy compose — runs on Hurska (192.168.4.33, Pi arm64) at /data/karhu-docs.
+# The karhu documentation site, Ayula-fronted: → https://framework.twobots.dev  (:8100)
+#
+# Hurska's static-site ports:
+#   8090 sleuth · 8091 sloth · 8092 basar · 8093 minified · 8094 basar-cv
+#   8095 family-map · 8096 diana-cv · 8097 mrs-peopsquik · 8098 twobots
+#   8099 karu (tongits) · 8100 karhu-docs
+services:
+  karhu-docs:
+    image: 192.168.4.9:5000/karhu-docs:latest
+    container_name: karhu-docs
+    ports:
+      - "8100:80"
+    restart: unless-stopped

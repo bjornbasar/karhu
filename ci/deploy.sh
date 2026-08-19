@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# karhu docs local CI/CD deploy — renders the MkDocs site, builds MULTI-ARCH (amd64 +
+# arm64 for Hurska), pushes the local registry (:latest + :sha- for rollback), redeploys
+# Hurska, smoke-tests.
+#
+# WHAT THIS PIPELINE DOES *NOT* DO: run the PHP test suite. GitHub Actions already runs
+# cs-fixer + PHPStan + PHPUnit on the 8.3/8.4 matrix for every push to main, and this
+# deploy publishes documentation, not the library. What it DOES gate on is the two things
+# that can make the published docs wrong: API-reference drift and broken internal links.
+#
+# Runs on Ruxa via `git push ruxa main` (post-receive) or by hand from the checkout.
+set -euo pipefail
+source "${CI_LIB:-/data/git/ci-lib.sh}"
+
+HURSKA="ubuntu@192.168.4.33"
+HURSKA_DIR="/data/karhu-docs"
+IMG="$REGISTRY/karhu-docs"
+PORT=8100
+
+ci_trap "→ Hurska (framework.twobots.dev)"
+ci_lock
+ci_ensure_buildx
+
+# ---------------------------------------------------------------- pre-deploy gates
+# These run on RUXA against the source tree, before anything is built or pushed. A
+# broken reference should fail here, not after an arm64 image has been through qemu.
+
+# THE GATE THIS SITE EXISTS FOR. karhu's docs rotted once already — the README's
+# hello-world example was fatally broken (wrong #[Route] argument order, a static call to
+# an instance method) and nothing noticed, because nothing checked. check-docs.php
+# reflects over src/ and fails when a public method is undocumented, when the reference
+# names a method that no longer exists, or when a page cites a src/ path that has moved.
+#
+# It registers its own PSR-4 autoloader rather than requiring vendor/autoload.php, which
+# is why a bare php:8.3-cli-alpine is enough — no composer install, ~2 seconds.
+ci_log "assert the API reference still matches src/"
+ci_php php tools/check-docs.php
+
+# Every advertised composer package must actually install. 200 is NOT sufficient:
+# Composer's default minimum-stability is `stable`, so a package with only dev-* versions
+# resolves on Packagist and still fails to install.
+#
+# A definitive 404 is FATAL; a transport failure is a WARNING — a Packagist outage must
+# not turn an unrelated docs commit red in #duskana.
+#
+# KNOWN_UNPUBLISHED: packages the docs mention *in order to say they are not installable*.
+# bjornbasar/karhu-skeleton is on GitHub but was never submitted to Packagist, so
+# installation.md and packages/skeleton.md warn about it and tell people to clone — and
+# they necessarily contain the string `composer create-project bjornbasar/karhu-skeleton`,
+# which this grep would otherwise flag as a broken install line.
+#
+# The exception is deliberately NOT a silent skip. If a listed package turns up on
+# Packagist, the deploy FAILS asking for the exception to be removed — otherwise this list
+# rots into a permanent blind spot the day the skeleton is finally published.
+KNOWN_UNPUBLISHED="bjornbasar/karhu-skeleton"
+
+ci_log "assert every advertised composer package resolves with a stable version"
+# `|| true`: grep exits 1 when it matches nothing, and under `set -euo pipefail` that
+# would abort on the very case the empty branch exists to handle.
+PKGS=$(grep -rhoE 'composer (require|create-project) bjornbasar/[a-z0-9-]+' docs/ \
+       | awk '{print $NF}' | sort -u || true)
+if [ -z "$PKGS" ]; then
+  ci_log "no composer commands advertised — nothing to check"
+else
+  for PKG in $PKGS; do
+    EXPECT_MISSING=false
+    case " $KNOWN_UNPUBLISHED " in *" $PKG "*) EXPECT_MISSING=true ;; esac
+
+    BODY=$(curl -sS --max-time 20 -w '\n%{http_code}' "https://repo.packagist.org/p2/$PKG.json" 2>/dev/null) || {
+      ci_log "⚠ could not reach Packagist for $PKG — SKIPPING (transport failure, not a stale line)"
+      continue
+    }
+    CODE=$(printf '%s' "$BODY" | tail -1)
+
+    if [ "$EXPECT_MISSING" = true ]; then
+      case "$CODE" in
+        404) ci_log "absent as expected (correct): $PKG — docs document it as clone-only"; continue ;;
+        200) ci_die "$PKG is NOW ON PACKAGIST — remove it from KNOWN_UNPUBLISHED and update the 'not on Packagist' warnings in docs/installation.md + docs/packages/skeleton.md" ;;
+        *)   ci_log "⚠ Packagist returned $CODE for $PKG — SKIPPING (not definitive)"; continue ;;
+      esac
+    fi
+
+    case "$CODE" in
+      200) ;;
+      404) ci_die "advertised package $PKG does NOT exist on Packagist — the install line in docs/ is broken" ;;
+      *)   ci_log "⚠ Packagist returned $CODE for $PKG — SKIPPING (not a definitive 404)"; continue ;;
+    esac
+    STABLE=$(printf '%s' "$BODY" | sed '$d' | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)['packages']
+    vs = [v['version'] for pkg in d.values() for v in pkg if not v['version'].startswith('dev-')]
+    print(len(vs))
+except Exception:
+    print('ERR')
+")
+    [ "$STABLE" = "ERR" ] && { ci_log "⚠ could not parse Packagist JSON for $PKG — SKIPPING"; continue; }
+    [ "$STABLE" = "0" ] && ci_die "$PKG has only dev-* versions — \`composer require\` fails under the default minimum-stability"
+    ci_log "resolves (correct): $PKG — $STABLE stable version(s)"
+  done
+fi
+
+# A repo flipped private 404s silently, leaving dead links on a page whose whole job is
+# sending people to code.
+#
+# The sed strips two things before the check: trailing punctuation swallowed by the grep,
+# and a trailing `.git`. The docs give real clone URLs (`git clone https://…/karhu-skeleton.git`)
+# and GitHub answers those with a 301 to the repo page — treating that as a dead link would
+# fail the deploy on a URL that is correct.
+ci_log "assert every linked GitHub repo is reachable"
+for URL in $(grep -rhoE 'https://github\.com/bjornbasar/[a-zA-Z0-9._-]+' docs/ README.md \
+             | sed -E 's/[.,)]*$//; s/\.git$//' | sort -u); do
+  CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$URL" 2>/dev/null) || {
+    ci_log "⚠ could not reach $URL — SKIPPING (transport failure)"; continue; }
+  [ "$CODE" = "200" ] || ci_die "$URL returned $CODE — a linked repo is private or gone"
+  ci_log "reachable (correct): $URL"
+done
+
+# ---------------------------------------------------------------------- render
+# --strict turns warnings into a failed build, and mkdocs.yml sets validation.* to warn
+# for unrecognised links and missing anchors — so a cross-reference to a heading that got
+# renamed fails HERE rather than shipping as a dead link.
+ci_log "render the MkDocs site (build --strict)"
+rm -rf site
+ci_mkdocs build --strict
+
+[ -f site/index.html ] || ci_die "mkdocs produced no site/index.html"
+PAGES=$(find site -name '*.html' | wc -l)
+ci_log "rendered $PAGES pages"
+# A nav regression that silently drops the API reference would otherwise deploy happily.
+# 40 is comfortably under the ~45 pages the current nav produces and well above anything
+# a partial build would emit.
+[ "$PAGES" -ge 40 ] || ci_die "only $PAGES pages rendered — expected 40+; the nav has probably lost a section"
+
+# ---------------------------------------------------------------------- build + ship
+ci_log "build + push multi-arch: $IMG (:latest + :sha-$CI_SHA)"
+docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 \
+  -t "$IMG:latest" -t "$IMG:sha-$CI_SHA" --push .
+
+ci_log "sync compose + redeploy on Hurska"
+ssh "$HURSKA" "mkdir -p $HURSKA_DIR"
+rsync -a docker-compose.yml "$HURSKA:$HURSKA_DIR/"
+ssh "$HURSKA" "cd $HURSKA_DIR && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+
+# ---------------------------------------------------------------------- smoke tests
+ci_log "smoke-test the deployed container"
+ssh "$HURSKA" "curl -sf -o /dev/null -w 'karhu-docs / → HTTP %{http_code}\n' http://localhost:$PORT/"
+
+# Assert the site actually deployed, not just that nginx is up. /api/http/ is the largest
+# reference page; /tutorial/01-routes/ proves the nav's deepest section rendered.
+for PAGE in / /installation/ /api/ /api/http/ /tutorial/01-routes/ /packages/db/; do
+  CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$PAGE")
+  [ "$CODE" = "200" ] || ci_die "$PAGE returned $CODE — the site did not deploy correctly"
+  ci_log "serves (correct): $PAGE → 200"
+done
+
+# Search is the classic silent mkdocs failure: the page renders, the box appears, and
+# nothing is ever found because the index 404s.
+CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/search/search_index.json")
+[ "$CODE" = "200" ] || ci_die "search_index.json → HTTP $CODE — site search is broken"
+ci_log "search index resolves (correct): /search/search_index.json → 200"
+
+# THE ALLOWLIST ASSERTION. The build context is an entire PHP framework repo, so this
+# matters more here than on the single-page sites: a regression in the Dockerfile COPY
+# list would publish source, tests, or the raw markdown.
+ci_log "assert the repo itself is not being served"
+for LEAK in /src/App.php /tests/AppTest.php /composer.json /mkdocs.yml /Dockerfile /tools/check-docs.php /docs/index.md; do
+  CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$LEAK")
+  [ "$CODE" = "404" ] || ci_die "$LEAK is being SERVED (HTTP $CODE) — check the Dockerfile COPY allowlist"
+  ci_log "not served (correct): $LEAK → 404"
+done
+
+# The directory-URL redirect must stay RELATIVE. mkdocs links pages as /installation/, and
+# default nginx answers /installation with an absolute Location built from the listen port —
+# behind Ayula that publishes `http://framework.twobots.dev:8100/installation/` to visitors.
+#
+# This reads the RAW Location header on purpose. curl's %{redirect_url} resolves a relative
+# header against the request URL, so it always contains the port and can never distinguish
+# the two cases — the assertion would pass or fail for the wrong reason.
+ci_log "assert the trailing-slash redirect stays relative"
+LOC=$(ssh "$HURSKA" "curl -s -D- -o /dev/null http://localhost:$PORT/installation | grep -i '^location:' | tr -d '\r'")
+case "$LOC" in
+  *"://"*) ci_die "the /installation redirect is absolute ($LOC) — absolute_redirect must be off" ;;
+  *"/installation/"*) ci_log "redirect is relative (correct): '$LOC'" ;;
+  *) ci_die "unexpected redirect for /installation: '$LOC'" ;;
+esac
+
+# ---------------------------------------------------------------------- public checks
+# Non-fatal by design: Cloudflare/Ayula can lag a container swap by a few seconds, and a
+# deploy that succeeded on the origin should not go red in #duskana for that.
+ci_log "verify the public URL (non-fatal)"
+PUB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://framework.twobots.dev/ 2>/dev/null || echo 000)
+if [ "$PUB" = "200" ]; then
+  ci_log "public (correct): https://framework.twobots.dev/ → 200"
+  # Both this site and the GitHub Pages mirror must name THIS host as canonical, or the
+  # two compete in search results. site_url in mkdocs.yml is what drives it.
+  if curl -s --max-time 20 https://framework.twobots.dev/ | grep -q 'rel="canonical" href="https://framework.twobots.dev/'; then
+    ci_log "canonical points here (correct)"
+  else
+    ci_log "⚠ canonical link is missing or points elsewhere — check site_url in mkdocs.yml"
+  fi
+else
+  ci_log "⚠ https://framework.twobots.dev/ → $PUB (origin is healthy; check the Ayula vhost)"
+fi
+
+# Best-effort ghcr copy. PUBLIC: karhu is a public MIT repo and these are its docs.
+ci_log "ghcr copy (best-effort)"
+docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 \
+  -t "$GHCR_NS/karhu-docs:latest" --push . \
+  || ci_log "⚠ ghcr copy failed (non-fatal; deploy already done)"

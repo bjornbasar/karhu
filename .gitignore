@@ -1,5 +1,7 @@
 /vendor/
 /cache/
+# Rendered docs — built by ci/deploy.sh (and by the GitHub Pages workflow) from docs/.
+/site/
 /.phpunit-cache/
 /.phpstan-cache/
 /.php-cs-fixer.cache
