@@ -104,7 +104,7 @@ When in doubt, prefer the sub-package.
 ## Versioning
 
 [Semantic Versioning 2.0.0](https://semver.org/). karhu is **pre-1.0**, so `0.x` minor releases
-may break the API. Consumers should pin (`^0.1.4`).
+may break the API. Consumers should pin (`^0.1.5`).
 
 Maintenance commitments: security patches promptly; the PHP floor tracks supported releases and
 bumps in the next minor once the current floor reaches EOL; bug fixes by PR with tests.

@@ -154,7 +154,7 @@ balancer.
 karhu is **pre-1.0** — the minor version can carry breaking changes. Pin it:
 
 ```json
-{ "require": { "bjornbasar/karhu": "^0.1.4" } }
+{ "require": { "bjornbasar/karhu": "^0.1.5" } }
 ```
 
 Before upgrading, run your suite plus `composer analyse`; PHPStan catches signature changes that

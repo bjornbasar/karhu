@@ -24,7 +24,7 @@ composer serve      # http://localhost:8080
     install tracks the tip of `main` rather than a release.
 
     ```bash
-    composer require bjornbasar/karhu:^0.1.4
+    composer require bjornbasar/karhu:^0.1.5
     ```
 
 ## What you get

@@ -1,6 +1,6 @@
 # karhu — Project Documentation
 
-**Version:** 0.1.4 | **License:** MIT | **PHP:** >=8.3
+**Version:** 0.1.5 | **License:** MIT | **PHP:** >=8.3
 
 Minimal PHP microframework — attribute-routed, zero runtime dependencies.
 

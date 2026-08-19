@@ -33,7 +33,7 @@ Add an autoload namespace to `composer.json`:
 ```json
 {
     "require": {
-        "bjornbasar/karhu": "^0.1.4"
+        "bjornbasar/karhu": "^0.1.5"
     },
     "autoload": {
         "psr-4": {

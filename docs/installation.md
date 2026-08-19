@@ -28,11 +28,12 @@ php -m | grep -i -E 'json|mbstring'
 composer require bjornbasar/karhu
 ```
 
-That is the whole install. The current release is **v0.1.4**.
+That is the whole install. The current release is **v0.1.5**.
 
-!!! note "The `vendor/bin/karhu` shim needs v0.1.5"
-    The `bin` key that tells Composer to link the CLI into `vendor/bin/` was added after v0.1.4.
-    On v0.1.4, run it by its real path instead:
+!!! note "`vendor/bin/karhu` requires v0.1.5 or newer"
+    The `bin` key that tells Composer to link the CLI into `vendor/bin/` landed in **v0.1.5**.
+    If you are pinned to v0.1.4 or earlier the shim is never created, and the entry point has to
+    be run by its real path:
 
     ```bash
     php vendor/bjornbasar/karhu/bin/karhu list
@@ -63,7 +64,7 @@ Add a PSR-4 namespace for your own code to `composer.json`:
 ```json
 {
     "require": {
-        "bjornbasar/karhu": "^0.1.4"
+        "bjornbasar/karhu": "^0.1.5"
     },
     "autoload": {
         "psr-4": {
@@ -188,10 +189,10 @@ myapp/
 
 !!! note "The skeleton tracks `dev-main`"
     Its `composer.json` requires `bjornbasar/karhu: dev-main` with `minimum-stability: dev`, so a
-    fresh install gets the tip of `main` rather than the v0.1.4 release. Pin it for anything real:
+    fresh install gets the tip of `main` rather than the v0.1.5 release. Pin it for anything real:
 
     ```bash
-    composer require bjornbasar/karhu:^0.1.4
+    composer require bjornbasar/karhu:^0.1.5
     ```
 
 ---

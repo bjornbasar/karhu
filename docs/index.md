@@ -78,7 +78,7 @@ Each is optional and independently versioned.
 
 ## Status
 
-**v0.1.4**, MIT licensed. Pre-1.0, so minor versions can break — pin with `^0.1.4`.
+**v0.1.5**, MIT licensed. Pre-1.0, so minor versions can break — pin with `^0.1.5`.
 
 The suite is 172 tests and 332 assertions, PHPStan runs at level 8, and the API reference on this
 site is machine-checked against the source on every build.

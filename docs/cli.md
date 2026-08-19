@@ -12,9 +12,9 @@ vendor/bin/karhu route:cache         # built-in: compile route cache
 vendor/bin/karhu route:clear         # built-in: remove route cache
 ```
 
-!!! warning "`vendor/bin/karhu` needs v0.1.5 or newer"
-    The `bin` key that makes Composer link the CLI into `vendor/bin/` was added after v0.1.4.
-    On v0.1.4 the shim is simply not created, and the entry point has to be run by its real
+!!! note "`vendor/bin/karhu` requires v0.1.5 or newer"
+    The `bin` key that makes Composer link the CLI into `vendor/bin/` landed in **v0.1.5**. On
+    v0.1.4 and earlier the shim is never created, and the entry point has to be run by its real
     path:
 
     ```bash
