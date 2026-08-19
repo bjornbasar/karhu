@@ -39,5 +39,11 @@ jobs:
       - name: Tests
         run: composer test -- --coverage-text
 
+      # Reflects over src/ and fails if a public method is missing from
+      # docs/api/*.md, or if the reference documents something that no longer
+      # exists. The same script gates the docs deploy.
+      - name: Docs reference drift
+        run: composer docs-check
+
       - name: Security audit
         run: composer audit
