@@ -11,32 +11,39 @@ A small framework you can read end-to-end. ~1200 LOC core, no closures-as-routes
 ## Install
 
 ```bash
-composer create-project bjornbasar/karhu-skeleton myapp
-cd myapp
+composer require bjornbasar/karhu
+```
+
+Or start from the skeleton app. It is **not on Packagist yet**, so clone it rather than using
+`composer create-project`:
+
+```bash
+git clone https://github.com/bjornbasar/karhu-skeleton.git myapp
+cd myapp && rm -rf .git
+composer install
 composer serve   # http://localhost:8080
 ```
 
-Or add karhu to an existing project:
-
-```bash
-composer require bjornbasar/karhu
-```
+Full setup, including web-server config: **[Installation](https://framework.twobots.dev/installation/)**.
 
 ## Hello world
 
 ```php
 use Karhu\Attributes\Route;
+use Karhu\Http\Request;
 use Karhu\Http\Response;
 
 final class HomeController {
-    #[Route('GET', '/hello/{name}')]
-    public function hello(string $name): Response {
-        return Response::json(['hello' => $name]);
+    #[Route('/hello/{name}', methods: ['GET'])]
+    public function hello(Request $request): Response {
+        return (new Response())->json(['hello' => $request->routeParams()['name']]);
     }
 }
 ```
 
 Register the controller in `config/controllers.php` and karhu's attribute scanner wires the route automatically.
+
+Three things worth noting, because each is easy to guess wrong: the **path comes first** in `#[Route]` (`methods` is the second, named argument), handlers receive the **`Request`** rather than unpacked route parameters, and `json()` is an **instance** method on `Response`, not a static one.
 
 ## What's in the box
 
@@ -47,7 +54,7 @@ Register the controller in `config/controllers.php` and karhu's attribute scanne
 | Auto-wiring DI container (PSR-11 shape) | `src/Container/Container.php` |
 | RBAC + PasswordHasher (argon2id) | `src/Auth/` |
 | Session, CSRF, CORS, RequireRole middleware | `src/Middleware/` |
-| Validation attributes (`#[Required]`, `#[StringLength]`, `#[In]`) | `src/Http/Validation/` |
+| Validation attributes (`#[Required]`, `#[StringLength]`, `#[In]`) | `src/Attributes/` + `src/Http/Validation.php` |
 | RFC 7807 error responses | `src/Error/ExceptionHandler.php` |
 | CLI dispatcher (`#[Command]`) | `src/Cli/` + `bin/karhu` |
 | Logger interface (PSR-3 shape) | `src/Log/` |

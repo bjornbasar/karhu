@@ -17,6 +17,9 @@
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0"
     },
+    "bin": [
+        "bin/karhu"
+    ],
     "autoload": {
         "psr-4": {
             "Karhu\\": "src/"
@@ -37,10 +40,12 @@
         "analyse": "phpstan analyse",
         "cs-fix": "php-cs-fixer fix",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "docs-check": "php tools/check-docs.php",
         "check": [
             "@cs-check",
             "@analyse",
-            "@test"
+            "@test",
+            "@docs-check"
         ]
     }
 }
