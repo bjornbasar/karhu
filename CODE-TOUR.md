@@ -294,7 +294,7 @@ karhu is the *engine*; those two are the *cars*. When you read them next, you're
 - Their bootstrap `index.php` wires middleware + `ExceptionHandler::register()` → §2, §8.
 - mishka's kicked-member redirect is the concrete consumer of `ForbiddenException::redirectTo` → §8.
 - Auth/RBAC flows through `UserRepositoryInterface` + `RequireRole` → the app *implements* the interface karhu only declares ([ADR-0006](docs/adr/0006-rbac-via-repository-interface.md)).
-- `examples/istrbuddy/` and [docs/recipes/istrbuddy.md](docs/recipes/istrbuddy.md) are the author's own worked reference — read those as the "expected usage."
+- `examples/istrbuddy/` and [docs/packages/istrbuddy.md](docs/packages/istrbuddy.md) are the author's own worked reference — read those as the "expected usage."
 
 The question to carry into mishka: *what does a real app have to supply that the framework deliberately left out?* (Answer preview: a `UserRepositoryInterface` impl, a view layer via karhu-view, DB access via karhu-db, and the container config.)
 
