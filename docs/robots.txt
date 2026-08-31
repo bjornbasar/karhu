@@ -1,6 +1,6 @@
-# framework.twobots.dev — the karhu documentation site.
+# docs.twobots.dev/karhu/ — the karhu documentation site.
 # Public framework docs: indexable in full.
 User-agent: *
 Allow: /
 
-Sitemap: https://framework.twobots.dev/sitemap.xml
+Sitemap: https://docs.twobots.dev/karhu/sitemap.xml

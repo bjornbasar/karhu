@@ -17,7 +17,7 @@ HURSKA_DIR="/data/karhu-docs"
 IMG="$REGISTRY/karhu-docs"
 PORT=8100
 
-ci_trap "→ Hurska (framework.twobots.dev)"
+ci_trap "→ Hurska (docs.twobots.dev/karhu/)"
 ci_lock
 ci_ensure_buildx
 
@@ -118,6 +118,14 @@ ci_log "rendered $PAGES pages"
 # a partial build would emit.
 [ "$PAGES" -ge 40 ] || ci_die "only $PAGES pages rendered — expected 40+; the nav has probably lost a section"
 
+# The canonical must name the PUBLIC host. docs.bjornbasar.com serves the same container behind
+# Cloudflare Access, so a canonical pointing there would advertise a URL search engines can
+# never fetch. Asserted on the rendered file rather than over the wire, so a mis-set site_url
+# fails before an image is built — and so the GitHub Pages mirror, which builds from the same
+# mkdocs.yml, inherits a canonical that is checked.
+grep -q 'rel="canonical" href="https://docs.twobots.dev/karhu/' site/index.html \
+  || ci_die "canonical is missing or points elsewhere — check site_url in mkdocs.yml"
+
 # ---------------------------------------------------------------------- build + ship
 ci_log "build + push multi-arch: $IMG (:latest + :sha-$CI_SHA)"
 docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 \
@@ -130,11 +138,13 @@ ssh "$HURSKA" "cd $HURSKA_DIR && docker compose pull && docker compose up -d --r
 
 # ---------------------------------------------------------------------- smoke tests
 ci_log "smoke-test the deployed container"
-ssh "$HURSKA" "curl -sf -o /dev/null -w 'karhu-docs / → HTTP %{http_code}\n' http://localhost:$PORT/"
+ssh "$HURSKA" "curl -sf -o /dev/null -w 'karhu-docs /karhu/ → HTTP %{http_code}\n' http://localhost:$PORT/karhu/"
 
 # Assert the site actually deployed, not just that nginx is up. /api/http/ is the largest
 # reference page; /tutorial/01-routes/ proves the nav's deepest section rendered.
-for PAGE in / /installation/ /api/ /api/http/ /tutorial/01-routes/ /packages/db/; do
+# NOTE the /karhu/ prefix: the site is rooted at its public path INSIDE the container so that
+# MkDocs' trailing-slash redirects stay correct behind a path-routed proxy (see nginx.conf).
+for PAGE in /karhu/ /karhu/installation/ /karhu/api/ /karhu/api/http/ /karhu/tutorial/01-routes/ /karhu/packages/db/; do
   CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$PAGE")
   [ "$CODE" = "200" ] || ci_die "$PAGE returned $CODE — the site did not deploy correctly"
   ci_log "serves (correct): $PAGE → 200"
@@ -142,9 +152,9 @@ done
 
 # Search is the classic silent mkdocs failure: the page renders, the box appears, and
 # nothing is ever found because the index 404s.
-CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/search/search_index.json")
+CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/karhu/search/search_index.json")
 [ "$CODE" = "200" ] || ci_die "search_index.json → HTTP $CODE — site search is broken"
-ci_log "search index resolves (correct): /search/search_index.json → 200"
+ci_log "search index resolves (correct): /karhu/search/search_index.json → 200"
 
 # THE ALLOWLIST ASSERTION. The build context is an entire PHP framework repo, so this
 # matters more here than on the single-page sites: a regression in the Dockerfile COPY
@@ -156,38 +166,58 @@ for LEAK in /src/App.php /tests/AppTest.php /composer.json /mkdocs.yml /Dockerfi
   ci_log "not served (correct): $LEAK → 404"
 done
 
-# The directory-URL redirect must stay RELATIVE. mkdocs links pages as /installation/, and
-# default nginx answers /installation with an absolute Location built from the listen port —
-# behind Ayula that publishes `http://framework.twobots.dev:8100/installation/` to visitors.
+# THE PATH-ROUTING ASSERTION. mkdocs links pages as /installation/, and default nginx answers
+# /karhu/installation with an absolute Location built from the listen port — behind Ayula that
+# would publish `http://docs.twobots.dev:8100/karhu/installation/` to visitors.
+#
+# Since the docs consolidation this checks a second, sharper thing: with absolute_redirect off
+# the Location is ROOT-relative, i.e. relative to the ORIGIN rather than to the proxied prefix,
+# so it must already CONTAIN /karhu/ or the redirect throws visitors out of this site and into
+# whatever else answers at docs.twobots.dev/installation/.
 #
 # This reads the RAW Location header on purpose. curl's %{redirect_url} resolves a relative
-# header against the request URL, so it always contains the port and can never distinguish
-# the two cases — the assertion would pass or fail for the wrong reason.
-ci_log "assert the trailing-slash redirect stays relative"
-LOC=$(ssh "$HURSKA" "curl -s -D- -o /dev/null http://localhost:$PORT/installation | grep -i '^location:' | tr -d '\r'")
+# header against the request URL, so it always looks correct and can never distinguish the
+# cases — the assertion would pass or fail for the wrong reason.
+ci_log "assert the trailing-slash redirect keeps the /karhu/ prefix"
+LOC=$(ssh "$HURSKA" "curl -s -D- -o /dev/null http://localhost:$PORT/karhu/installation | grep -i '^location:' | tr -d '\r'")
 case "$LOC" in
-  *"://"*) ci_die "the /installation redirect is absolute ($LOC) — absolute_redirect must be off" ;;
-  *"/installation/"*) ci_log "redirect is relative (correct): '$LOC'" ;;
-  *) ci_die "unexpected redirect for /installation: '$LOC'" ;;
+  *"://"*) ci_die "the redirect is absolute ($LOC) — absolute_redirect must be off" ;;
+  *"/karhu/installation/"*) ci_log "redirect keeps the prefix (correct): '$LOC'" ;;
+  *) ci_die "redirect LOST the /karhu/ prefix: '$LOC' — the site must be rooted at /karhu/ in the image" ;;
 esac
 
 # ---------------------------------------------------------------------- public checks
 # Non-fatal by design: Cloudflare/Ayula can lag a container swap by a few seconds, and a
 # deploy that succeeded on the origin should not go red in #duskana for that.
 ci_log "verify the public URL (non-fatal)"
-PUB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://framework.twobots.dev/ 2>/dev/null || echo 000)
+PUB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://docs.twobots.dev/karhu/ 2>/dev/null || echo 000)
 if [ "$PUB" = "200" ]; then
-  ci_log "public (correct): https://framework.twobots.dev/ → 200"
-  # Both this site and the GitHub Pages mirror must name THIS host as canonical, or the
-  # two compete in search results. site_url in mkdocs.yml is what drives it.
-  if curl -s --max-time 20 https://framework.twobots.dev/ | grep -q 'rel="canonical" href="https://framework.twobots.dev/'; then
-    ci_log "canonical points here (correct)"
-  else
-    ci_log "⚠ canonical link is missing or points elsewhere — check site_url in mkdocs.yml"
-  fi
+  ci_log "public (correct): https://docs.twobots.dev/karhu/ → 200"
 else
-  ci_log "⚠ https://framework.twobots.dev/ → $PUB (origin is healthy; check the Ayula vhost)"
+  ci_log "⚠ https://docs.twobots.dev/karhu/ → $PUB (origin is healthy; check the Ayula vhost)"
 fi
+
+# The old name is a PERMANENT 301 and stays one. It was the advertised home on Packagist,
+# in the README, and in every release note, so it has to keep working — a 404 here is a dead
+# link on someone else's page, which is the one kind of rot this repo cannot fix later.
+ci_log "verify the old name still redirects (non-fatal)"
+OLD=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 \
+      'https://framework.twobots.dev/guides/?x=1' 2>/dev/null || echo '000 -')
+case "$OLD" in
+  "301 https://docs.twobots.dev/karhu/guides/?x=1") ci_log "old name redirects with path+query intact (correct): $OLD" ;;
+  *) ci_log "⚠ framework.twobots.dev/guides/?x=1 → $OLD (expected a 301 preserving path and query)" ;;
+esac
+
+# The gated hostname must NOT answer 200 anonymously. A 302 to the Cloudflare Access login is
+# the CORRECT result, and is also why that path is probed at the origin rather than through the
+# edge — blackbox follows redirects and would record a false 200.
+ci_log "verify the gated hostname still gates (non-fatal)"
+GATED=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://docs.bjornbasar.com/karhu/ 2>/dev/null || echo 000)
+case "$GATED" in
+  302|401|403) ci_log "gated (correct): docs.bjornbasar.com/karhu/ → $GATED" ;;
+  200)         ci_log "⚠ docs.bjornbasar.com/karhu/ answered 200 ANONYMOUSLY — Cloudflare Access is not covering this path" ;;
+  *)           ci_log "⚠ docs.bjornbasar.com/karhu/ → $GATED" ;;
+esac
 
 # Best-effort ghcr copy. PUBLIC: karhu is a public MIT repo and these are its docs.
 ci_log "ghcr copy (best-effort)"

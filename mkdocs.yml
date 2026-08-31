@@ -2,7 +2,17 @@ site_name: karhu
 site_description: Minimal PHP microframework — attribute-routed, zero dependencies, PHP 8.3+
 # The canonical home. mkdocs-material emits <link rel="canonical"> from this value, so the
 # GitHub Pages mirror points here too and does not compete with it in search results.
-site_url: https://framework.twobots.dev/
+#
+# Moved off framework.twobots.dev 2026-08-31 when the estate's docs consolidated onto one
+# host per audience. karhu is now one path among several reference sites; framework.twobots.dev
+# is a permanent 301 here. The TRAILING SEGMENT is load-bearing — mkdocs-material builds the
+# canonical link and the sitemap from this value, and a bare host would advertise every page at
+# the site root.
+#
+# docs.twobots.dev, NOT docs.bjornbasar.com. The same container answers under both, but the
+# bjornbasar one sits behind Cloudflare Access — naming it canonical would point search engines
+# at a URL they can never fetch.
+site_url: https://docs.twobots.dev/karhu/
 repo_url: https://github.com/bjornbasar/karhu
 repo_name: bjornbasar/karhu
 copyright: MIT licensed

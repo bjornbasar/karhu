@@ -1,5 +1,9 @@
 # Deploy compose — runs on Hurska (192.168.4.33, Pi arm64) at /data/karhu-docs.
-# The karhu documentation site, Ayula-fronted: → https://framework.twobots.dev  (:8100)
+# The karhu documentation site, Ayula-fronted (:8100). Since 2026-08-31 it answers at
+# https://docs.twobots.dev/karhu/ (public) and https://docs.bjornbasar.com/karhu/ (Cloudflare
+# Access) from this one container; framework.twobots.dev is a permanent 301 to the first.
+# The site is rooted at /karhu/ INSIDE the image and Ayula proxies the path through unchanged
+# — see nginx.conf for why stripping it would break every directory URL.
 #
 # Hurska's static-site ports:
 #   8090 sleuth · 8091 sloth · 8092 basar · 8093 minified · 8094 basar-cv

@@ -77,7 +77,7 @@ library and has no `public/` to serve. Run it from a generated app.
 ## Documentation
 
 The full documentation lives in `docs/` and is published at
-**[framework.twobots.dev](https://framework.twobots.dev/)** — Installation, Getting Started, a
+**[docs.twobots.dev/karhu/](https://docs.twobots.dev/karhu/)** — Installation, Getting Started, a
 five-part tutorial, topical guides, and a complete API reference covering all **38 classes and
 134 public methods**.
 
@@ -95,16 +95,38 @@ calls, and a static call to the instance method `Response::json()`), and nothing
 The format the checker expects — a `## ClassName` section plus a table row per public method,
 and a `NAMESPACE_PAGES` entry for every namespace — is documented in `docs/contributing.md`.
 
-### Two published copies
+### Three published copies, one canonical
 
 | | |
 |---|---|
-| **framework.twobots.dev** | canonical. nginx container on Hurska `:8100`, Ayula-fronted, deployed by `git push ruxa main` |
+| **docs.twobots.dev/karhu/** | canonical, public. nginx container on Hurska `:8100`, Ayula-fronted, deployed by `git push ruxa main` |
+| **docs.bjornbasar.com/karhu/** | the SAME container, behind Cloudflare Access — the private view of every reference site at once |
 | **GitHub Pages** | DR mirror, unchanged workflow |
 
-Both build from `docs/`. `site_url` in `mkdocs.yml` points at framework.twobots.dev, so
-mkdocs-material emits `rel=canonical` there from **both** builds and the mirror never competes
-in search results.
+All build from `docs/`. `site_url` in `mkdocs.yml` names docs.twobots.dev/karhu/, so
+mkdocs-material emits `rel=canonical` there from **every** build and neither the mirror nor the
+gated hostname competes in search results. The gated one must never be canonical: it answers an
+unauthenticated fetch with a redirect to a login page, so a search engine could never reach it.
+
+**`framework.twobots.dev` is a permanent 301** to the canonical path, preserving path and query.
+It was the advertised home on Packagist, in the README and in every release note, so it has to
+keep working — a 404 there is a dead link on someone else's page.
+
+### The path prefix lives in the image, not in the proxy
+
+Since the consolidation, the rendered site is copied to `/usr/share/nginx/html/karhu/` and Ayula
+proxies the path through **unchanged** rather than stripping it. MkDocs links pages as directory
+URLs, so nginx 301s `/karhu/installation` to add a slash, and with `absolute_redirect off` that
+`Location` is *root*-relative — relative to the origin, not to any proxied prefix. Had the prefix
+been stripped, that redirect would resolve to `docs.twobots.dev/installation/` and land on
+another repo's docs. `ci/deploy.sh` asserts the raw `Location` header still carries `/karhu/`,
+reading the header directly because curl's `%{redirect_url}` resolves it against the request URL
+and so can never tell the two cases apart.
+
+`/robots.txt` is consequently **not** this container's to serve: crawlers read it only at the
+host root, which no per-repo container owns. The `docs.twobots.dev` vhost serves one
+authoritative file naming every site's sitemap. `docs/robots.txt` is kept for the GitHub Pages
+mirror.
 
 ---
 

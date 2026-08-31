@@ -22,7 +22,7 @@ cd myapp
 composer serve   # http://localhost:8080
 ```
 
-Full setup, including web-server config: **[Installation](https://framework.twobots.dev/installation/)**.
+Full setup, including web-server config: **[Installation](https://docs.twobots.dev/karhu/installation/)**.
 
 ## Hello world
 

@@ -1,4 +1,5 @@
-# The karhu documentation site at https://framework.twobots.dev/ — static nginx.
+# The karhu documentation site at https://docs.twobots.dev/karhu/ — static nginx.
+# Also answers at https://docs.bjornbasar.com/karhu/ (Cloudflare Access); same container.
 #
 # Built multi-arch on Ruxa (amd64 + arm64), pushed to 192.168.4.9:5000, pulled on
 # Hurska (Pi, arm64). Fronted by Ayula.
@@ -16,13 +17,17 @@
 FROM nginx:alpine
 
 LABEL org.opencontainers.image.source=https://github.com/bjornbasar/karhu
-LABEL org.opencontainers.image.description="karhu — framework documentation (framework.twobots.dev)"
+LABEL org.opencontainers.image.description="karhu — framework documentation (docs.twobots.dev/karhu/)"
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # The rendered site ONLY. mkdocs emits index.html, the per-page directories, the
 # theme's assets/, a search index, sitemap.xml, and the robots.txt copied verbatim
 # from docs/.
-COPY site/ /usr/share/nginx/html/
+#
+# ⚠ THE /karhu/ SUBDIRECTORY IS REQUIRED, NOT COSMETIC. The site is served at its real
+# public path so MkDocs' trailing-slash redirects stay correct behind a path-routed proxy —
+# see the header of nginx.conf. Changing this back to `html/` breaks every directory URL.
+COPY site/ /usr/share/nginx/html/karhu/
 
 EXPOSE 80

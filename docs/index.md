@@ -85,6 +85,6 @@ site is machine-checked against the source on every build.
 
 ## Where the documentation lives
 
-- **[framework.twobots.dev](https://framework.twobots.dev/)** — this site, the canonical home
+- **[docs.twobots.dev/karhu/](https://docs.twobots.dev/karhu/)** — this site, the canonical home
 - **[github.com/bjornbasar/karhu](https://github.com/bjornbasar/karhu)** — source and issues
 - A mirror is published to GitHub Pages for redundancy; both build from `docs/` in the repo
