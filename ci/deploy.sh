@@ -201,11 +201,22 @@ fi
 # in the README, and in every release note, so it has to keep working — a 404 here is a dead
 # link on someone else's page, which is the one kind of rot this repo cannot fix later.
 ci_log "verify the old name still redirects (non-fatal)"
+#
+# /installation/ and NOT /guides/, which is what this checked first and is a nav SECTION
+# rather than a page — it 404s at the destination and always did, so the assertion passed
+# while its own log line pointed at a dead URL. A redirect check should name something a
+# visitor could actually have bookmarked.
 OLD=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 \
-      'https://framework.twobots.dev/guides/?x=1' 2>/dev/null || echo '000 -')
+      'https://framework.twobots.dev/installation/?x=1' 2>/dev/null || echo '000 -')
 case "$OLD" in
-  "301 https://docs.twobots.dev/karhu/guides/?x=1") ci_log "old name redirects with path+query intact (correct): $OLD" ;;
-  *) ci_log "⚠ framework.twobots.dev/guides/?x=1 → $OLD (expected a 301 preserving path and query)" ;;
+  "301 https://docs.twobots.dev/karhu/installation/?x=1")
+    ci_log "old name redirects with path+query intact (correct): $OLD"
+    # Follow it. The 301 being well-formed is not the same as the destination existing,
+    # which is the difference between a working link and a tidy-looking dead one.
+    END=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 25 'https://framework.twobots.dev/installation/' 2>/dev/null || echo 000)
+    [ "$END" = "200" ] && ci_log "and the destination resolves (correct): 200" \
+                       || ci_log "⚠ the redirect is correct but its destination returned $END" ;;
+  *) ci_log "⚠ framework.twobots.dev/installation/?x=1 → $OLD (expected a 301 preserving path and query)" ;;
 esac
 
 # The gated hostname must NOT answer 200 anonymously. A 302 to the Cloudflare Access login is
