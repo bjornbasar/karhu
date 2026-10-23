@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # karhu docs local CI/CD deploy — renders the MkDocs site, builds MULTI-ARCH (amd64 +
-# arm64 for Hurska), pushes the local registry (:latest + :sha- for rollback), redeploys
-# Hurska, smoke-tests.
+# arm64, legacy of when this ran on arm64 Hurska), pushes the local registry (:latest +
+# :sha- for rollback), redeploys Lumra, smoke-tests.
 #
 # WHAT THIS PIPELINE DOES *NOT* DO: run the PHP test suite. GitHub Actions already runs
 # cs-fixer + PHPStan + PHPUnit on the 8.3/8.4 matrix for every push to main, and this
@@ -12,12 +12,16 @@
 set -euo pipefail
 source "${CI_LIB:-/data/git/ci-lib.sh}"
 
-HURSKA="ubuntu@192.168.4.33"
-HURSKA_DIR="/data/karhu-docs"
+# .38 (USB-Ethernet dongle), not .37 (WiFi) -- the wifi card has a recurring PCIe
+# drop (reference_lumra_iwlwifi_pcie_drop.md) and the dongle is now the reliable
+# path. A deploy only needs ONE reachable address, unlike nginx/Prometheus which
+# got dual-path failover -- .38 alone is correct here.
+LUMRA="ubuntu@192.168.4.38"
+LUMRA_DIR="/data/karhu-docs"
 IMG="$REGISTRY/karhu-docs"
 PORT=8100
 
-ci_trap "→ Hurska (docs.twobots.dev/karhu/)"
+ci_trap "→ Lumra (docs.twobots.dev/karhu/)"
 ci_lock
 ci_ensure_buildx
 
@@ -143,28 +147,28 @@ ci_log "build + push multi-arch: $IMG (:latest + :sha-$CI_SHA)"
 docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 \
   -t "$IMG:latest" -t "$IMG:sha-$CI_SHA" --push .
 
-ci_log "sync compose + redeploy on Hurska"
-ssh "$HURSKA" "mkdir -p $HURSKA_DIR"
-rsync -a docker-compose.yml "$HURSKA:$HURSKA_DIR/"
-ssh "$HURSKA" "cd $HURSKA_DIR && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+ci_log "sync compose + redeploy on Lumra"
+ssh "$LUMRA" "mkdir -p $LUMRA_DIR"
+rsync -a docker-compose.yml "$LUMRA:$LUMRA_DIR/"
+ssh "$LUMRA" "cd $LUMRA_DIR && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
 
 # ---------------------------------------------------------------------- smoke tests
 ci_log "smoke-test the deployed container"
-ssh "$HURSKA" "curl -sf -o /dev/null -w 'karhu-docs /karhu/ → HTTP %{http_code}\n' http://localhost:$PORT/karhu/"
+ssh "$LUMRA" "curl -sf -o /dev/null -w 'karhu-docs /karhu/ → HTTP %{http_code}\n' http://localhost:$PORT/karhu/"
 
 # Assert the site actually deployed, not just that nginx is up. /api/http/ is the largest
 # reference page; /tutorial/01-routes/ proves the nav's deepest section rendered.
 # NOTE the /karhu/ prefix: the site is rooted at its public path INSIDE the container so that
 # MkDocs' trailing-slash redirects stay correct behind a path-routed proxy (see nginx.conf).
 for PAGE in /karhu/ /karhu/installation/ /karhu/api/ /karhu/api/http/ /karhu/tutorial/01-routes/ /karhu/packages/db/; do
-  CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$PAGE")
+  CODE=$(ssh "$LUMRA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$PAGE")
   [ "$CODE" = "200" ] || ci_die "$PAGE returned $CODE — the site did not deploy correctly"
   ci_log "serves (correct): $PAGE → 200"
 done
 
 # Search is the classic silent mkdocs failure: the page renders, the box appears, and
 # nothing is ever found because the index 404s.
-CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/karhu/search/search_index.json")
+CODE=$(ssh "$LUMRA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT/karhu/search/search_index.json")
 [ "$CODE" = "200" ] || ci_die "search_index.json → HTTP $CODE — site search is broken"
 ci_log "search index resolves (correct): /karhu/search/search_index.json → 200"
 
@@ -173,7 +177,7 @@ ci_log "search index resolves (correct): /karhu/search/search_index.json → 200
 # list would publish source, tests, or the raw markdown.
 ci_log "assert the repo itself is not being served"
 for LEAK in /src/App.php /tests/AppTest.php /composer.json /mkdocs.yml /Dockerfile /tools/check-docs.php /docs/index.md; do
-  CODE=$(ssh "$HURSKA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$LEAK")
+  CODE=$(ssh "$LUMRA" "curl -s -o /dev/null -w '%{http_code}' http://localhost:$PORT$LEAK")
   [ "$CODE" = "404" ] || ci_die "$LEAK is being SERVED (HTTP $CODE) — check the Dockerfile COPY allowlist"
   ci_log "not served (correct): $LEAK → 404"
 done
@@ -191,7 +195,7 @@ done
 # header against the request URL, so it always looks correct and can never distinguish the
 # cases — the assertion would pass or fail for the wrong reason.
 ci_log "assert the trailing-slash redirect keeps the /karhu/ prefix"
-LOC=$(ssh "$HURSKA" "curl -s -D- -o /dev/null http://localhost:$PORT/karhu/installation | grep -i '^location:' | tr -d '\r'")
+LOC=$(ssh "$LUMRA" "curl -s -D- -o /dev/null http://localhost:$PORT/karhu/installation | grep -i '^location:' | tr -d '\r'")
 case "$LOC" in
   *"://"*) ci_die "the redirect is absolute ($LOC) — absolute_redirect must be off" ;;
   *"/karhu/installation/"*) ci_log "redirect keeps the prefix (correct): '$LOC'" ;;

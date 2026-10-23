@@ -1,14 +1,13 @@
-# Deploy compose — runs on Hurska (192.168.4.33, Pi arm64) at /data/karhu-docs.
+# Deploy compose — runs on Lumra (192.168.4.38, dongle) at /data/karhu-docs.
 # The karhu documentation site, Ayula-fronted (:8100). Since 2026-08-31 it answers at
 # https://docs.twobots.dev/karhu/ (public) and https://docs.bjornbasar.com/karhu/ (Cloudflare
 # Access) from this one container; framework.twobots.dev is a permanent 301 to the first.
 # The site is rooted at /karhu/ INSIDE the image and Ayula proxies the path through unchanged
 # — see nginx.conf for why stripping it would break every directory URL.
 #
-# Hurska's static-site ports:
-#   8090 sleuth · 8091 sloth · 8092 basar · 8093 minified · 8094 basar-cv
-#   8095 family-map · 8096 diana-cv · 8097 mrs-peopsquik · 8098 twobots
-#   8099 karu (tongits) · 8100 karhu-docs
+# Port 8100 is globally reserved for karhu-docs across the fleet (moved off Hurska to
+# Lumra 2026-10-23, alongside the other *-docs sites — see fleet.toml for current
+# per-service host placement; it's no longer all on one host).
 services:
   karhu-docs:
     image: 192.168.4.9:5000/karhu-docs:latest

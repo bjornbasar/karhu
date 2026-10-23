@@ -99,7 +99,7 @@ and a `NAMESPACE_PAGES` entry for every namespace — is documented in `docs/con
 
 | | |
 |---|---|
-| **docs.twobots.dev/karhu/** | canonical, public. nginx container on Hurska `:8100`, Ayula-fronted, deployed by `git push ruxa main` |
+| **docs.twobots.dev/karhu/** | canonical, public. nginx container on Lumra `:8100`, Ayula-fronted, deployed by `git push ruxa main` |
 | **docs.bjornbasar.com/karhu/** | the SAME container, behind Cloudflare Access — the private view of every reference site at once |
 | **GitHub Pages** | DR mirror, unchanged workflow |
 
@@ -138,7 +138,8 @@ mirror.
 - Docs deploy to GitHub Pages on `docs/**` changes (the DR mirror)
 
 **Local loop** (`git push ruxa main` → `ci/deploy.sh` on Ruxa) — the docs site. Renders MkDocs
-amd64-native on Ruxa, then builds a multi-arch nginx image and deploys to Hurska. It does
+amd64-native on Ruxa, then builds a multi-arch nginx image and deploys to Lumra (moved off
+Hurska 2026-10-23, alongside the other `*-docs` sites). It does
 **not** run the PHP suite; GitHub Actions owns that. Its gates are `check-docs.php`,
 `mkdocs build --strict`, a rendered-page floor, Packagist resolvability, and post-deploy
 assertions that the repo itself 404s.
