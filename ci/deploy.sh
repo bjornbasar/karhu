@@ -8,7 +8,7 @@
 # deploy publishes documentation, not the library. What it DOES gate on is the two things
 # that can make the published docs wrong: API-reference drift and broken internal links.
 #
-# Runs on Ruxa via `git push ruxa main` (post-receive) or by hand from the checkout.
+# Runs on Ruxa via `git push den main` (post-receive) or by hand from the checkout.
 set -euo pipefail
 source "${CI_LIB:-/data/git/ci-lib.sh}"
 
