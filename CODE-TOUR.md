@@ -300,4 +300,4 @@ The question to carry into mishka: *what does a real app have to supply that the
 
 ---
 
-*Tour covers karhu core @ `460cd5c`. Companion docs: [DOCS.md](DOCS.md) (project facts), [docs/adr/](docs/adr/) (decisions), [docs/](docs/) (usage). Next tours: mishka → istrbuddy → ansible.*
+*Tour covers karhu core @ `7bbd881`. Companion docs: [DOCS.md](DOCS.md) (project facts), [docs/adr/](docs/adr/) (decisions), [docs/](docs/) (usage). Next tours: mishka → ansible.*
