@@ -114,13 +114,11 @@ ci_log "render the MkDocs site (build --strict)"
 rm -rf site
 ci_mkdocs build --strict
 
-[ -f site/index.html ] || ci_die "mkdocs produced no site/index.html"
-PAGES=$(find site -name '*.html' | wc -l)
-ci_log "rendered $PAGES pages"
 # A nav regression that silently drops the API reference would otherwise deploy happily.
 # 40 is comfortably under the ~45 pages the current nav produces and well above anything
 # a partial build would emit.
-[ "$PAGES" -ge 40 ] || ci_die "only $PAGES pages rendered — expected 40+; the nav has probably lost a section"
+ci_assert_mkdocs_built 40
+ci_log "rendered $PAGES pages"
 
 # Assert every page carries the route back to the documentation index. Added because these
 # sites sit under a shared landing page and a reader who arrives on a deep link needs a way
@@ -139,8 +137,7 @@ ci_log "every page routes back to the index (correct): $LINKED/$PAGES"
 # never fetch. Asserted on the rendered file rather than over the wire, so a mis-set site_url
 # fails before an image is built — and so the GitHub Pages mirror, which builds from the same
 # mkdocs.yml, inherits a canonical that is checked.
-grep -q 'rel="canonical" href="https://docs.twobots.dev/karhu/' site/index.html \
-  || ci_die "canonical is missing or points elsewhere — check site_url in mkdocs.yml"
+ci_assert_mkdocs_canonical "https://docs.twobots.dev/karhu/"
 
 # ---------------------------------------------------------------------- build + ship
 ci_log "build + push multi-arch: $IMG (:latest + :sha-$CI_SHA)"
