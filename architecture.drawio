@@ -1,73 +1,73 @@
 <mxfile host="app.diagrams.net" agent="claude-code">
   <diagram id="architecture" name="Karhu Architecture">
-    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+    <mxGraphModel dx="1414" dy="777" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="consumer" value="Consuming app (e.g. mishka)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="240" height="40" as="geometry" />
+        <mxCell id="consumer" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Consuming app (e.g. mishka)" vertex="1">
+          <mxGeometry height="40" width="240" x="530" y="320" as="geometry" />
         </mxCell>
-        <mxCell id="apphp" value="App.php (request lifecycle)" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontSize=12;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="160" width="220" height="200" as="geometry" />
+        <mxCell id="apphp" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontSize=12;fontStyle=1;" value="App.php (request lifecycle)" vertex="1">
+          <mxGeometry height="200" width="220" x="550" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="apphp_router" value="Router" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="apphp">
-          <mxGeometry x="15" y="40" width="190" height="30" as="geometry" />
+        <mxCell id="apphp_router" parent="apphp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Router" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="apphp_container" value="Container (PSR-11 auto-wiring DI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="apphp">
-          <mxGeometry x="15" y="80" width="190" height="30" as="geometry" />
+        <mxCell id="apphp_container" parent="apphp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Container (PSR-11 auto-wiring DI)" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="apphp_pipeline" value="MiddlewarePipeline -&gt; dispatch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="apphp">
-          <mxGeometry x="15" y="120" width="190" height="30" as="geometry" />
+        <mxCell id="apphp_pipeline" parent="apphp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="MiddlewarePipeline -&gt; dispatch" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="apphp_errorhandler" value="ErrorHandler (404/405, RFC 7807)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="apphp">
-          <mxGeometry x="15" y="160" width="190" height="30" as="geometry" />
+        <mxCell id="apphp_errorhandler" parent="apphp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="ErrorHandler (404/405, RFC 7807)" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="160" as="geometry" />
         </mxCell>
-        <mxCell id="core" value="Core services" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontSize=12;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="300" y="160" width="220" height="200" as="geometry" />
+        <mxCell id="core" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontSize=12;fontStyle=1;" value="Core services" vertex="1">
+          <mxGeometry height="200" width="220" x="200" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="core_attrs" value="Attributes: #[Route] / #[Command]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="core">
-          <mxGeometry x="15" y="40" width="190" height="30" as="geometry" />
+        <mxCell id="core_attrs" parent="core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Attributes: #[Route] / #[Command]" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="core_auth" value="Auth: PasswordHasher(argon2id) + Rbac" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="core">
-          <mxGeometry x="15" y="80" width="190" height="30" as="geometry" />
+        <mxCell id="core_auth" parent="core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Auth: PasswordHasher(argon2id) + Rbac" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="core_middleware" value="Middleware: Session/Csrf/Cors/Role" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="core">
-          <mxGeometry x="15" y="120" width="190" height="30" as="geometry" />
+        <mxCell id="core_middleware" parent="core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Middleware: Session/Csrf/Cors/Role" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="core_cli" value="Cli: CommandDispatcher + bin/karhu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="core">
-          <mxGeometry x="15" y="160" width="190" height="30" as="geometry" />
+        <mxCell id="core_cli" parent="core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="Cli: CommandDispatcher + bin/karhu" vertex="1">
+          <mxGeometry height="30" width="190" x="15" y="160" as="geometry" />
         </mxCell>
-        <mxCell id="karhudb" value="karhu-db&#10;(separate repo/package)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="420" width="180" height="40" as="geometry" />
+        <mxCell id="karhudb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" value="karhu-db&#xa;(separate repo/package)" vertex="1">
+          <mxGeometry height="40" width="180" x="40" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="karhuqueue" value="karhu-queue&#10;(separate repo/package)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="260" y="420" width="180" height="40" as="geometry" />
+        <mxCell id="karhuqueue" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" value="karhu-queue&#xa;(separate repo/package)" vertex="1">
+          <mxGeometry height="40" width="180" x="260" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="karhuview" value="karhu-view&#10;(separate repo/package)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="480" y="420" width="180" height="40" as="geometry" />
+        <mxCell id="karhuview" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" value="karhu-view&#xa;(separate repo/package)" vertex="1">
+          <mxGeometry height="40" width="180" x="480" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="karhuskel" value="karhu-skeleton&#10;(starter template)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="700" y="420" width="180" height="40" as="geometry" />
+        <mxCell id="karhuskel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" value="karhu-skeleton&#xa;(starter template)" vertex="1">
+          <mxGeometry height="40" width="180" x="700" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="docscheck" value="composer docs-check&#10;(MkDocs + reflection gate)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="920" y="420" width="200" height="40" as="geometry" />
+        <mxCell id="docscheck" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;" value="composer docs-check&#xa;(MkDocs + reflection gate)" vertex="1">
+          <mxGeometry height="40" width="200" x="920" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="e1" value="composes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;" edge="1" parent="1" source="consumer" target="apphp">
+        <mxCell id="e1" edge="1" parent="1" source="consumer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;" target="apphp" value="composes">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;" edge="1" parent="1" source="apphp" target="core">
+        <mxCell id="e2" edge="1" parent="1" source="apphp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;" target="core" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" value="wires in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" edge="1" parent="1" source="consumer" target="karhudb">
+        <mxCell id="e3" edge="1" parent="1" source="consumer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" target="karhudb" value="wires in">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" value="wires in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" edge="1" parent="1" source="consumer" target="karhuqueue">
+        <mxCell id="e4" edge="1" parent="1" source="consumer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" target="karhuqueue" value="wires in">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" value="wires in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" edge="1" parent="1" source="consumer" target="karhuview">
+        <mxCell id="e5" edge="1" parent="1" source="consumer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" target="karhuview" value="wires in">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" edge="1" parent="1" source="apphp" target="docscheck">
+        <mxCell id="e6" edge="1" parent="1" source="apphp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;dashed=1;" target="docscheck" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
